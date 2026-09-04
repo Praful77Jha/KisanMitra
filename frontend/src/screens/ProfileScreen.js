@@ -118,7 +118,10 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>{t('reviews.title')}</Text>
-        <View style={styles.activityCard}>
+        <Pressable
+          style={({ pressed }) => [styles.activityCard, pressed && styles.ratingCardPressed]}
+          onPress={() => navigation.navigate('MyRatings')}
+        >
           <View style={styles.ratingRow}>
             <View style={styles.ratingIcon}>
               <Ionicons name="star" size={20} color={theme.colors.warning} />
@@ -139,8 +142,9 @@ export default function ProfileScreen() {
                 <Text style={styles.ratingEmpty}>{t('reviews.noReviews')}</Text>
               )}
             </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
           </View>
-        </View>
+        </Pressable>
 
         <View style={styles.languageCard}>
           <Text style={styles.languageLabel}>{t('profile.language')}</Text>
@@ -311,6 +315,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: theme.spacing.lg,
     gap: theme.spacing.md,
+  },
+  ratingCardPressed: {
+    opacity: 0.8,
   },
   ratingIcon: {
     width: 40,

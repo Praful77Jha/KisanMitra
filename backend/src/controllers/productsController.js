@@ -1,5 +1,6 @@
 const { USE_DATABASE } = require('../config/config');
 const productService = USE_DATABASE ? require('../services/productService') : null;
+const userService = require('../services/userService');
 
 const products = [
   {
@@ -11,6 +12,7 @@ const products = [
     unit: 'Quintal',
     pricePerQuintal: 4200,
     seller: 'AgroMart Traders',
+    sellerUserId: null,
     sellerRating: 4.6,
     verified: true,
     location: 'Nashik, MH',
@@ -31,6 +33,7 @@ const products = [
     unit: 'Quintal',
     pricePerQuintal: 5600,
     seller: 'GreenFields Co-op',
+    sellerUserId: null,
     sellerRating: 4.8,
     verified: true,
     location: 'Latur, MH',
@@ -51,6 +54,7 @@ const products = [
     unit: 'Quintal',
     pricePerQuintal: 1800,
     seller: 'Lasalgaon APMC',
+    sellerUserId: null,
     sellerRating: 4.3,
     verified: false,
     location: 'Lasalgaon, MH',
@@ -71,6 +75,7 @@ const products = [
     unit: 'Quintal',
     pricePerQuintal: 2400,
     seller: 'MP Grain Exports',
+    sellerUserId: null,
     sellerRating: 4.5,
     verified: true,
     location: 'Indore, MP',
@@ -91,6 +96,7 @@ const products = [
     unit: 'Quintal',
     pricePerQuintal: 8200,
     seller: 'PulseHub Distributors',
+    sellerUserId: null,
     sellerRating: 4.7,
     verified: true,
     location: 'Akola, MH',
@@ -111,6 +117,7 @@ const products = [
     unit: 'Tonne',
     pricePerQuintal: 7800,
     seller: 'Sindhudurg Farms',
+    sellerUserId: null,
     sellerRating: 4.9,
     verified: true,
     location: 'Ratnagiri, MH',
@@ -170,4 +177,81 @@ async function getProductById(req, res, next) {
   });
 }
 
-module.exports = { getAllProducts, getProductById, products };
+let productIdCounter = products.length;
+
+// Create a new "Sell Crop" product listing owned by the authenticated seller.
+// The seller identity always comes from the token (req.user), never the body, so
+// a posted crop is guaranteed to belong to the logged-in farmer. Ownership is
+// recorded on sellerUserId and drives the "you cannot offer on your own
+// product" rule in createOffer.
+async function createProduct(req, res, next) {
+  const { name, category, grade, quantity, unit, pricePerQuintal, location, description } = req.body;
+
+  if (!name || !name.trim() || !category || !quantity || !unit || !pricePerQuintal) {
+    return res.status(400).json({
+      success: false,
+      message: 'name, category, quantity, unit, and pricePerQuintal are required',
+    });
+  }
+
+  const qty = Number(quantity);
+  const price = Number(pricePerQuintal);
+  if (!Number.isFinite(qty) || qty <= 0) {
+    return res.status(400).json({ success: false, message: 'quantity must be a positive number' });
+  }
+  if (!Number.isFinite(price) || price <= 0) {
+    return res.status(400).json({ success: false, message: 'pricePerQuintal must be a positive number' });
+  }
+
+  if (USE_DATABASE) {
+    try {
+      const authenticatedUser = await userService.findUserById(req.user.id);
+      if (!authenticatedUser) {
+        return res.status(401).json({ success: false, message: 'Authenticated user not found' });
+      }
+      const newProduct = await productService.createProduct({
+        sellerUserId: req.user.id,
+        seller: authenticatedUser.name,
+        name: name.trim(),
+        category: category.trim(),
+        grade,
+        quantity,
+        unit,
+        pricePerQuintal,
+        location: location ? location.trim() : null,
+        description: description ? description.trim() : null,
+      });
+      return res.status(201).json({ success: true, data: newProduct });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  productIdCounter += 1;
+  const newProduct = {
+    id: `p${productIdCounter}`,
+    name: name.trim(),
+    category: category.trim(),
+    grade: grade || null,
+    quantity: qty,
+    unit,
+    pricePerQuintal: price,
+    seller: req.user.name || 'Farmer',
+    sellerUserId: req.user.id,
+    sellerRating: null,
+    verified: false,
+    location: location ? location.trim() : null,
+    distanceKm: null,
+    transportCost: null,
+    otherCosts: null,
+    dealScore: 50,
+    imageFile: null,
+    description: description ? description.trim() : null,
+  };
+
+  products.unshift(newProduct);
+
+  res.status(201).json({ success: true, data: newProduct });
+}
+
+module.exports = { getAllProducts, getProductById, createProduct, products };

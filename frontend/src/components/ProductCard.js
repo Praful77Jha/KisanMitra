@@ -37,7 +37,8 @@ export default function ProductCard({ product, onPress, onFavouritePress }) {
         <View style={styles.metaRow}>
           <Ionicons name="location-outline" size={13} color={theme.colors.textMuted} />
           <Text style={styles.metaText}>
-            {product.location} · {formatDistance(product.distanceKm)}
+            {product.location}
+            {product.distanceKm != null ? ` · ${formatDistance(product.distanceKm)}` : ''}
           </Text>
         </View>
       </View>

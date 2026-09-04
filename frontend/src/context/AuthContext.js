@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { register as registerRequest, login as loginRequest, getMe } from '../services/authService';
+import { register as registerRequest, login as loginRequest, getMe, updateLocation as updateLocationRequest } from '../services/authService';
 import { saveToken, getToken, removeToken } from '../services/tokenStorage';
 import { setSessionExpiredHandler, clearSessionExpiredHandler } from '../services/authEvents';
 
@@ -116,7 +116,16 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = { user, token, loading, login, register, logout };
+  const updateLocation = useCallback(async (location) => {
+    const response = await updateLocationRequest(location);
+    if (response && response.success && response.data) {
+      setUser((prev) => (prev ? { ...prev, location: response.data.location } : prev));
+      return response.data;
+    }
+    throw new Error('Could not update location');
+  }, []);
+
+  const value = { user, token, loading, login, register, logout, updateLocation };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

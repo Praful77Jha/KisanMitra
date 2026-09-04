@@ -21,6 +21,7 @@ import {
 } from '../services/reviewService';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatQuantity, formatDate, formatDateShort } from '../utils/formatting';
+import { translateOrderStatus } from '../utils/statusLabels';
 import Header from '../components/Header';
 import Badge from '../components/Badge';
 import EmptyState from '../components/EmptyState';
@@ -56,6 +57,7 @@ export default function OrderDetailsScreen() {
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
@@ -148,6 +150,7 @@ export default function OrderDetailsScreen() {
     }
     setSubmitting(true);
     setSubmitError('');
+    setReviewSuccess('');
     try {
       if (myReview && editing) {
         await updateReview(orderId, myReview.id, { rating, comment: comment.trim() || undefined });
@@ -159,6 +162,7 @@ export default function OrderDetailsScreen() {
       setEditing(false);
       setRating(0);
       setComment('');
+      setReviewSuccess(t('reviews.submitted'));
     } catch (e) {
       setSubmitError(e.message || t('reviews.couldNotSubmit'));
     } finally {
@@ -171,6 +175,7 @@ export default function OrderDetailsScreen() {
     setComment(myReview.comment || '');
     setEditing(true);
     setSubmitError('');
+    setReviewSuccess('');
   };
 
   const handleDelete = () => {
@@ -187,6 +192,7 @@ export default function OrderDetailsScreen() {
             setEditing(false);
             setRating(0);
             setComment('');
+            setReviewSuccess('');
           } catch (e) {
             setSubmitError(e.message || t('reviews.couldNotSubmit'));
           }
@@ -223,7 +229,7 @@ export default function OrderDetailsScreen() {
               <Text style={styles.orderIdLabel}>{t('orderDetails.orderId')}</Text>
               <Text style={styles.orderId}>{order.id}</Text>
             </View>
-            <Badge label={order.status} type={statusType(order.status)} />
+            <Badge label={translateOrderStatus(order.status, t)} type={statusType(order.status)} />
           </View>
           <View style={styles.divider} />
           <InfoRow label={t('orderDetails.product')} value={order.productName} />
@@ -259,7 +265,7 @@ export default function OrderDetailsScreen() {
 
         <Text style={styles.sectionTitle}>{t('orderDetails.tracking')}</Text>
         <View style={styles.card}>
-          <Timeline entries={order.timeline} currentIndex={currentStageIndex} />
+          <Timeline entries={order.timeline} currentIndex={currentStageIndex} t={t} />
         </View>
 
         <Text style={styles.sectionTitle}>{t('logistics.orderTitle')}</Text>
@@ -313,6 +319,7 @@ export default function OrderDetailsScreen() {
             setComment={setComment}
             submitting={submitting}
             submitError={submitError}
+            reviewSuccess={reviewSuccess}
             editing={editing}
             onSubmit={handleSubmit}
             onEdit={startEdit}
@@ -326,7 +333,7 @@ export default function OrderDetailsScreen() {
   );
 }
 
-function Timeline({ entries, currentIndex }) {
+function Timeline({ entries, currentIndex, t }) {
   return (
     <View>
       {entries.map((entry, index) => {
@@ -364,7 +371,7 @@ function Timeline({ entries, currentIndex }) {
                   isPending && styles.timelineStepPending,
                 ]}
               >
-                {entry.step}
+                {translateOrderStatus(entry.step, t)}
               </Text>
               {entry.date ? (
                 <Text style={styles.timelineDate}>{formatDateShort(entry.date)}</Text>
@@ -498,6 +505,7 @@ function ReviewSection({
   setComment,
   submitting,
   submitError,
+  reviewSuccess,
   editing,
   onSubmit,
   onEdit,
@@ -508,6 +516,12 @@ function ReviewSection({
       <Text style={styles.sectionTitleInline}>{t('reviews.title')}</Text>
 
       {reviewError ? <Text style={styles.reviewError}>{reviewError}</Text> : null}
+      {reviewSuccess ? (
+        <View style={styles.reviewSuccess}>
+          <Ionicons name="checkmark-circle" size={18} color={theme.colors.success} />
+          <Text style={styles.reviewSuccessText}>{reviewSuccess}</Text>
+        </View>
+      ) : null}
 
       {reviewsLoading ? (
         <ActivityIndicator color={theme.colors.primary} style={styles.reviewLoading} />
@@ -748,6 +762,21 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSizes.sm,
     color: theme.colors.error,
     marginBottom: theme.spacing.sm,
+  },
+  reviewSuccess: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.badgeSuccess,
+    borderRadius: theme.spacing.radiusMedium,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  reviewSuccessText: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.success,
+    fontWeight: theme.typography.fontWeights.semibold,
+    flex: 1,
   },
   reviewSummaryBlock: {
     marginTop: theme.spacing.sm,

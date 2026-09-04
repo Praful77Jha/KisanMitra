@@ -8,6 +8,7 @@ export function formatQuantity(quantity, unit) {
 }
 
 export function formatDistance(km) {
+  if (km == null) return '';
   return `${km} km`;
 }
 

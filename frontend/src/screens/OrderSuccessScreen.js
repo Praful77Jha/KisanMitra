@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import theme from '../theme';
 import { fetchOrderById } from '../services/productService';
 import { formatCurrency, formatQuantity, formatDate } from '../utils/formatting';
+import { translateOrderStatus } from '../utils/statusLabels';
 import Header from '../components/Header';
 import Badge from '../components/Badge';
 import EmptyState from '../components/EmptyState';
@@ -104,7 +105,7 @@ export default function OrderSuccessScreen() {
           <View style={styles.cardHeader}>
             <Text style={styles.cardLabel}>{t('orderSuccess.orderId')}</Text>
             <Badge
-              label={order.status}
+              label={translateOrderStatus(order.status, t)}
               type={order.status === 'Delivered' ? 'success' : 'info'}
             />
           </View>
@@ -118,7 +119,7 @@ export default function OrderSuccessScreen() {
         </View>
 
         <Text style={styles.statusHint}>
-          {`${t('orderSuccess.currentStatus')}: ${order.status} · ${t('orderSuccess.orderStages')}: ${order.timeline.length}`}
+          {`${t('orderSuccess.currentStatus')}: ${translateOrderStatus(order.status, t)} · ${t('orderSuccess.orderStages')}: ${order.timeline.length}`}
         </Text>
 
         <PrimaryButton title={t('orderSuccess.viewOrder')} onPress={goToOrders} style={styles.viewButton} />

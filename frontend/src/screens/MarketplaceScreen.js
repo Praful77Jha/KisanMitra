@@ -20,6 +20,7 @@ import ProductCard from '../components/ProductCard';
 import CategoryChip from '../components/CategoryChip';
 import EmptyState from '../components/EmptyState';
 import PrimaryButton from '../components/PrimaryButton';
+import LocationPickerModal from '../components/LocationPickerModal';
 import { useTranslation } from '../i18n';
 
 export default function MarketplaceScreen() {
@@ -27,7 +28,7 @@ export default function MarketplaceScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, updateLocation } = useAuth();
   const initialCategory = route.params?.category || null;
   const initialQuery = route.params?.query || '';
 
@@ -45,6 +46,7 @@ export default function MarketplaceScreen() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [locationOpen, setLocationOpen] = useState(false);
 
   const loadProducts = useCallback(() => {
     let cancelled = false;
@@ -123,6 +125,10 @@ export default function MarketplaceScreen() {
     }
   };
 
+  const handleLocationConfirm = (location) => {
+    return updateLocation(location);
+  };
+
   const renderItem = ({ item }) => (
     <ProductCard
       product={item}
@@ -138,10 +144,10 @@ export default function MarketplaceScreen() {
           <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
         </Pressable>
         <Text style={styles.title}>{t('marketplace.title')}</Text>
-        <Pressable style={styles.locationChip} onPress={() => {}}>
+        <Pressable style={styles.locationChip} onPress={() => setLocationOpen(true)}>
           <Ionicons name="location-outline" size={15} color={theme.colors.primary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {(user?.location || '').split(',')[0]}
+            {(user?.location || '').split(',')[0] || t('home.selectLocation')}
           </Text>
           <Ionicons name="chevron-down" size={13} color={theme.colors.textMuted} />
         </Pressable>
@@ -220,6 +226,12 @@ export default function MarketplaceScreen() {
             />
           )
         }
+      />
+      <LocationPickerModal
+        visible={locationOpen}
+        initialValue={user?.location}
+        onClose={() => setLocationOpen(false)}
+        onConfirm={handleLocationConfirm}
       />
     </View>
   );

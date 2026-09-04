@@ -269,6 +269,7 @@ async function createOffer(req, res, next) {
 
   // Validate the target exists before persisting so no orphan offers are stored.
   let requirement = null;
+  let product = null;
   if (isRequirementOffer) {
     // A seller may only respond to a requirement that exists, is open, and is
     // not their own. This prevents orphan offers and self-referencing offers
@@ -298,7 +299,7 @@ async function createOffer(req, res, next) {
       });
     }
   } else if (USE_DATABASE) {
-    const product = await productService.findProductById(productId);
+    product = await productService.findProductById(productId);
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -307,12 +308,22 @@ async function createOffer(req, res, next) {
     }
   } else {
     const { products: mockProducts } = require('./productsController');
-    if (!mockProducts.some((p) => p.id === productId)) {
+    product = mockProducts.find((p) => p.id === productId) || null;
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: 'Product not found',
       });
     }
+  }
+
+  // A seller cannot make an offer on their own listing. This prevents a farmer
+  // from bidding against themselves and keeps product-marketplace offers honest.
+  if (isProductOffer && product && product.sellerUserId === req.user.id) {
+    return res.status(400).json({
+      success: false,
+      message: 'You cannot make an offer on your own product',
+    });
   }
 
   // Maker identity always comes from the authenticated user, never the body.

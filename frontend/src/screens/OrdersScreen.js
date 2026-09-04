@@ -13,6 +13,7 @@ import theme from '../theme';
 import { useTranslation } from '../i18n';
 import { fetchOrders } from '../services/productService';
 import { formatCurrency, formatQuantity, formatDateShort } from '../utils/formatting';
+import { translateOrderStatus } from '../utils/statusLabels';
 import Badge from '../components/Badge';
 import EmptyState from '../components/EmptyState';
 
@@ -58,7 +59,7 @@ export default function OrdersScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.productName}>{item.productName}</Text>
-          <Badge label={item.status} type={statusType(item.status)} />
+          <Badge label={translateOrderStatus(item.status, t)} type={statusType(item.status)} />
         </View>
 
         <View style={styles.metaRow}>

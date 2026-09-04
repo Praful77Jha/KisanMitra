@@ -119,6 +119,10 @@ export function apiPut(path, body) {
   return apiSend('PUT', path, body);
 }
 
+export function apiPatch(path, body) {
+  return apiSend('PATCH', path, body);
+}
+
 export function apiDelete(path) {
   return apiSend('DELETE', path);
 }

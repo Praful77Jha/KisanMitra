@@ -24,6 +24,7 @@ model User {
   reviewsReceived Review[] @relation("ReviewedUsers")
   notifications Notification[]
   chatMessagesSent ChatMessage[] @relation("ChatMessagesSent")
+  products     Product[] @relation("ProductSeller")
 }
 
 model Product {
@@ -35,6 +36,7 @@ model Product {
   unit             String   @db.VarChar(32)
   pricePerQuintal  Decimal  @db.Decimal(12, 2)
   seller           String   @db.VarChar(120)
+  sellerUserId     String?  @db.VarChar(64)
   sellerRating     Decimal? @db.Decimal(3, 2)
   verified         Boolean  @default(false)
   location         String?  @db.VarChar(120)
@@ -46,6 +48,7 @@ model Product {
   description      String?  @db.Text
 
   offers Offer[]
+  user   User?   @relation("ProductSeller", fields: [sellerUserId], references: [id], onDelete: SetNull)
 
   @@index([category])
 }
@@ -198,6 +201,25 @@ model Logistics {
 
   @@index([orderId])
   @@index([status])
+}
+
+// Reference market prices sourced from MSAMB (Maharashtra State Agricultural
+// Marketing Board) for the Market Comparison feature. Each row stores a single
+// crop × market × date observation. The `source` field identifies the data
+// origin (e.g. "MSAMB") and `referenceDate` the published date.
+model MarketPrice {
+  id            String   @id @default(cuid()) @db.VarChar(64)
+  cropName      String   @db.VarChar(120)
+  marketName    String   @db.VarChar(120)
+  pricePerQtl   Decimal  @db.Decimal(12, 2)
+  referenceDate DateTime @db.Date
+  source        String   @default("MSAMB") @db.VarChar(64)
+  unit          String   @default("Quintal") @db.VarChar(32)
+  createdAt     DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([cropName])
+  @@index([marketName])
+  @@unique([cropName, marketName, referenceDate])
 }
 
 // Persistent buyer-seller messaging for an order (Phase 7). A conversation is

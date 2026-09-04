@@ -17,11 +17,14 @@ export const mockCategories = [
 ];
 
 export const mockQuickActions = [
+  { key: 'sell_crop', label: 'Sell Crop', icon: 'storefront-outline' },
   { key: 'all_products', label: 'All Products', icon: 'grid' },
   { key: 'buyer_req', label: 'My Requirements', icon: 'document-text' },
   { key: 'compare', label: 'Compare Deals', icon: 'git-compare' },
   { key: 'logistics', label: 'Logistics Estimate', icon: 'cube' },
   { key: 'prices', label: 'Price & Insights', icon: 'trending-up' },
+  { key: 'market_prices', label: 'Market Prices', icon: 'bar-chart-outline' },
+  { key: 'where_to_sell', label: 'Best Selling Option', icon: 'leaf' },
   { key: 'seller_needs', label: 'Respond to Needs', icon: 'megaphone-outline' },
 ];
 

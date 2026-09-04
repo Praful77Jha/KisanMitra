@@ -13,6 +13,7 @@ import theme from '../theme';
 import { useTranslation } from '../i18n';
 import { fetchProductById } from '../services/productService';
 import { formatCurrency, formatQuantity, formatDistance } from '../utils/formatting';
+import { translateCategory } from '../utils/statusLabels';
 import { grossRevenue, estimatedNetReturn } from '../utils/calculation';
 import Header from '../components/Header';
 import PrimaryButton from '../components/PrimaryButton';
@@ -233,7 +234,7 @@ export default function ProductDetailsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('product.qualityDetails')}</Text>
           <View style={styles.qualityCard}>
-            <QualityRow label={t('product.category')} value={product.category} />
+            <QualityRow label={t('product.category')} value={translateCategory(product.category, t)} />
             <QualityRow label={t('product.grade')} value={product.grade} />
             <QualityRow label={t('product.available')} value={formatQuantity(product.quantity, product.unit)} />
             <QualityRow label={t('product.price')} value={`${formatCurrency(product.pricePerQuintal)} ${t('product.perQuintal')}`} />

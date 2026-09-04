@@ -7,6 +7,7 @@ import { useTranslation } from '../i18n';
 import HomeScreen from '../screens/HomeScreen';
 import MarketplaceScreen from '../screens/MarketplaceScreen';
 import PostRequirementScreen from '../screens/PostRequirementScreen';
+import SellCropScreen from '../screens/SellCropScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ProductDetailsScreen from '../screens/ProductDetailsScreen';
@@ -21,9 +22,12 @@ import ChatScreen from '../screens/ChatScreen';
 import CompareDealsScreen from '../screens/CompareDealsScreen';
 import LogisticsScreen from '../screens/LogisticsScreen';
 import PriceInsightsScreen from '../screens/PriceInsightsScreen';
+import MarketComparisonScreen from '../screens/MarketComparisonScreen';
+import SmartRecommendationScreen from '../screens/SmartRecommendationScreen';
 import MakeOfferScreen from '../screens/MakeOfferScreen';
 import AvailableNeedsScreen from '../screens/AvailableNeedsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import MyRatingsScreen from '../screens/MyRatingsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -84,6 +88,7 @@ export default function MainNavigator() {
       <Stack.Screen name="Tabs" component={MainTabs} />
       <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
       <Stack.Screen name="MyRequirements" component={MyRequirementsScreen} />
+      <Stack.Screen name="SellCrop" component={SellCropScreen} />
       <Stack.Screen name="RequirementOffers" component={OffersScreen} />
       <Stack.Screen name="ConfirmOrder" component={ConfirmOrderScreen} />
       <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
@@ -94,9 +99,12 @@ export default function MainNavigator() {
       <Stack.Screen name="CompareDeals" component={CompareDealsScreen} />
       <Stack.Screen name="Logistics" component={LogisticsScreen} />
       <Stack.Screen name="PriceInsights" component={PriceInsightsScreen} />
+      <Stack.Screen name="MarketComparison" component={MarketComparisonScreen} />
+      <Stack.Screen name="SmartRecommendation" component={SmartRecommendationScreen} />
       <Stack.Screen name="MakeOffer" component={MakeOfferScreen} />
       <Stack.Screen name="AvailableNeeds" component={AvailableNeedsScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="MyRatings" component={MyRatingsScreen} />
     </Stack.Navigator>
   );
 }

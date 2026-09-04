@@ -34,6 +34,9 @@ app.use('/api/logistics', logisticsRouter);
 const priceInsightsRouter = require('./routes/priceInsights');
 app.use('/api/price-insights', priceInsightsRouter);
 
+const marketPricesRouter = require('./routes/marketPrices');
+app.use('/api/market-prices', marketPricesRouter);
+
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);
 

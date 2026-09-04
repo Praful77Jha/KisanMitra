@@ -22,6 +22,7 @@ import QuickAction from '../components/QuickAction';
 import ProductCard from '../components/ProductCard';
 import PrimaryButton from '../components/PrimaryButton';
 import EmptyState from '../components/EmptyState';
+import LocationPickerModal from '../components/LocationPickerModal';
 import { useTranslation } from '../i18n';
 
 const QUICK_ACTION_COLORS = [
@@ -37,13 +38,14 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { user } = useAuth();
+  const { user, updateLocation } = useAuth();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notificationsUnread, setNotificationsUnread] = useState(0);
+  const [locationOpen, setLocationOpen] = useState(false);
   const isFocused = useIsFocused();
 
   const loadUnreadCount = useCallback(() => {
@@ -103,6 +105,9 @@ export default function HomeScreen() {
   };
 
   const handleQuickAction = (action) => {
+    if (action.key === 'sell_crop') {
+      navigation.navigate('SellCrop');
+    }
     if (action.key === 'all_products') {
       navigation.navigate('Marketplace');
     }
@@ -117,6 +122,12 @@ export default function HomeScreen() {
     }
     if (action.key === 'prices') {
       navigation.navigate('PriceInsights');
+    }
+    if (action.key === 'market_prices') {
+      navigation.navigate('MarketComparison');
+    }
+    if (action.key === 'where_to_sell') {
+      navigation.navigate('SmartRecommendation');
     }
     if (action.key === 'seller_needs') {
       navigation.navigate('AvailableNeeds');
@@ -133,6 +144,10 @@ export default function HomeScreen() {
     navigation.navigate('Notifications');
   };
 
+  const handleLocationConfirm = (location) => {
+    return updateLocation(location);
+  };
+
   const heroIllustration = Math.min(width * 0.4, 170);
 
   return (
@@ -145,7 +160,7 @@ export default function HomeScreen() {
         keyboardDismissMode="on-drag"
       >
         <View style={styles.topBar}>
-          <Pressable style={styles.locationChip} onPress={() => {}}>
+          <Pressable style={styles.locationChip} onPress={() => setLocationOpen(true)}>
             <Ionicons name="location-outline" size={16} color={theme.colors.primary} />
             <Text style={styles.locationText} numberOfLines={1}>
               {user?.location || t('home.selectLocation')}
@@ -180,12 +195,19 @@ export default function HomeScreen() {
           <Text style={styles.heroSubtitle}>
             {t('home.heroSubtitle')}
           </Text>
-          <PrimaryButton
-            title={t('home.postRequirement')}
-            variant="secondary"
-            onPress={() => navigation.navigate('Post')}
-            style={styles.heroButton}
-          />
+          <View style={styles.heroButtons}>
+            <PrimaryButton
+              title={t('home.sellCrop')}
+              onPress={() => navigation.navigate('SellCrop')}
+              style={styles.heroButton}
+            />
+            <PrimaryButton
+              title={t('home.postRequirement')}
+              variant="secondary"
+              onPress={() => navigation.navigate('Post')}
+              style={styles.heroButton}
+            />
+          </View>
         </View>
 
         <View style={styles.searchRow}>
@@ -202,11 +224,14 @@ export default function HomeScreen() {
         <View style={styles.quickActions}>
           {mockQuickActions.map((action, index) => {
             const labelKey = {
+              sell_crop: 'quickActions.sellCrop',
               all_products: 'quickActions.allProducts',
               buyer_req: 'quickActions.myRequirements',
               compare: 'quickActions.compareDeals',
               logistics: 'quickActions.logisticsEstimate',
               prices: 'quickActions.priceInsights',
+              market_prices: 'quickActions.marketComparison',
+              where_to_sell: 'quickActions.smartRecommendation',
               seller_needs: 'quickActions.respondToNeeds',
             }[action.key];
             return (
@@ -274,6 +299,12 @@ export default function HomeScreen() {
         )}
         <View style={styles.footerSpacer} />
       </ScrollView>
+      <LocationPickerModal
+        visible={locationOpen}
+        initialValue={user?.location}
+        onClose={() => setLocationOpen(false)}
+        onConfirm={handleLocationConfirm}
+      />
     </View>
   );
 }
@@ -396,8 +427,13 @@ const styles = StyleSheet.create({
     maxWidth: '72%',
     marginBottom: theme.spacing.lg,
   },
-  heroButton: {
+  heroButtons: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
     alignSelf: 'flex-start',
+  },
+  heroButton: {
+    flex: 1,
   },
   searchRow: {
     marginBottom: theme.spacing.lg,

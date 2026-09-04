@@ -311,12 +311,29 @@ const orders = [
   },
 ];
 
+// MSAMB reference prices — 3 Sep 2026 (seeded idempotently via upsert).
+const marketPrices = [
+  { cropName: 'Onion',   marketName: 'Ahmednagar',  pricePerQtl: 3100 },
+  { cropName: 'Onion',   marketName: 'Solapur',     pricePerQtl: 3400 },
+  { cropName: 'Onion',   marketName: 'Lasalgaon',   pricePerQtl: 4525 },
+  { cropName: 'Soybean', marketName: 'Akola',       pricePerQtl: 6080 },
+  { cropName: 'Soybean', marketName: 'Amravati',    pricePerQtl: 5900 },
+  { cropName: 'Soybean', marketName: 'Sangli',      pricePerQtl: 6850 },
+  { cropName: 'Tur',     marketName: 'Akola',       pricePerQtl: 8255 },
+  { cropName: 'Tur',     marketName: 'Amravati',    pricePerQtl: 8325 },
+  { cropName: 'Wheat',   marketName: 'Solapur',     pricePerQtl: 3665 },
+  { cropName: 'Maize',   marketName: 'Lasalgaon',   pricePerQtl: 2551 },
+];
+
+const MSAMB_DATE = new Date('2026-09-03');
+
 async function main() {
   // Idempotent: wipe tables in reverse FK order so re-runs are clean.
   await prisma.order.deleteMany();
   await prisma.offer.deleteMany();
   await prisma.requirement.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.marketPrice.deleteMany();
 
   // 1. Products (no dependencies)
   for (const p of products) {
@@ -360,11 +377,34 @@ async function main() {
   const offerCount = await prisma.offer.count();
   const orderCount = await prisma.order.count();
 
+  // 5. MSAMB reference market prices (idempotent upsert)
+  for (const mp of marketPrices) {
+    await prisma.marketPrice.upsert({
+      where: {
+        cropName_marketName_referenceDate: {
+          cropName: mp.cropName,
+          marketName: mp.marketName,
+          referenceDate: MSAMB_DATE,
+        },
+      },
+      update: { pricePerQtl: mp.pricePerQtl },
+      create: {
+        cropName: mp.cropName,
+        marketName: mp.marketName,
+        pricePerQtl: mp.pricePerQtl,
+        referenceDate: MSAMB_DATE,
+        source: 'MSAMB',
+      },
+    });
+  }
+  const marketPriceCount = await prisma.marketPrice.count();
+
   console.log('Seed complete.');
-  console.log(`Products:     ${productCount}`);
-  console.log(`Requirements: ${requirementCount}`);
-  console.log(`Offers:       ${offerCount}`);
-  console.log(`Orders:       ${orderCount}`);
+  console.log(`Products:      ${productCount}`);
+  console.log(`Requirements:  ${requirementCount}`);
+  console.log(`Offers:        ${offerCount}`);
+  console.log(`Orders:        ${orderCount}`);
+  console.log(`MarketPrices:  ${marketPriceCount}`);
 }
 
 main()

@@ -35,6 +35,14 @@ export async function fetchProductById(productId) {
   throw new Error('Product not found');
 }
 
+export async function createProduct(product) {
+  const response = await apiPost('/products', product);
+  if (response.success && response.data) {
+    return attachImage(response.data);
+  }
+  throw new Error('Could not post your crop for sale');
+}
+
 const offersStore = [...mockOffers];
 
 export async function fetchOffersForProduct(productId) {

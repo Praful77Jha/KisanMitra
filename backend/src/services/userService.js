@@ -26,10 +26,18 @@ async function comparePassword(password, passwordHash) {
   return bcrypt.compare(password, passwordHash);
 }
 
+async function updateUserLocation(id, location) {
+  return prisma.user.update({
+    where: { id },
+    data: { location },
+  });
+}
+
 module.exports = {
   findUserByPhone,
   findUserById,
   createUser,
   hashPassword,
   comparePassword,
+  updateUserLocation,
 };
