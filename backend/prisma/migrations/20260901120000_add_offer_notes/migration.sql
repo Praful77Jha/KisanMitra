@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Offer` ADD COLUMN `notes` VARCHAR(500) NULL;

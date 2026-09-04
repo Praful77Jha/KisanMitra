@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User: local auth identity for the app.
+// phone is the unique login identifier; passwordHash stores the bcrypt hash.
+model User {
+  id           String   @id @default(cuid()) @db.VarChar(64)
+  name         String   @db.VarChar(120)
+  phone        String   @unique @db.VarChar(32)
+  passwordHash String   @db.VarChar(255)
+  location     String?  @db.VarChar(120)
+  avatarColor  String?  @db.VarChar(32)
+  createdAt    DateTime @default(now())
+
+  requirements Requirement[]
+  orders       Order[]
+  reviewsGiven Review[] @relation("ReviewerReviews")
+  reviewsReceived Review[] @relation("ReviewedUsers")
+  notifications Notification[]
+  chatMessagesSent ChatMessage[] @relation("ChatMessagesSent")
+}
+
+model Product {
+  id               String   @id @db.VarChar(64)
+  name             String   @db.VarChar(120)
+  category         String   @db.VarChar(80)
+  grade            String?  @db.VarChar(32)
+  quantity         Decimal  @db.Decimal(12, 2)
+  unit             String   @db.VarChar(32)
+  pricePerQuintal  Decimal  @db.Decimal(12, 2)
+  seller           String   @db.VarChar(120)
+  sellerRating     Decimal? @db.Decimal(3, 2)
+  verified         Boolean  @default(false)
+  location         String?  @db.VarChar(120)
+  distanceKm       Decimal? @db.Decimal(10, 2)
+  transportCost    Decimal? @db.Decimal(12, 2)
+  otherCosts       Decimal? @db.Decimal(12, 2)
+  dealScore        Int?
+  imageFile        String?  @db.VarChar(255)
+  description      String?  @db.Text
+
+  offers Offer[]
+
+  @@index([category])
+}
+
+model Requirement {
+  id                String   @id @db.VarChar(64)
+  userId            String?  @db.VarChar(64)
+  cropName          String   @db.VarChar(120)
+  grade             String?  @db.VarChar(32)
+  quantity          Decimal  @db.Decimal(12, 2)
+  unit              String   @db.VarChar(32)
+  maxPricePerQuintal Decimal @db.Decimal(12, 2)
+  location          String   @db.VarChar(120)
+  postedDate        DateTime @db.Date
+  status            String   @default("active") @db.VarChar(32)
+  offerCount        Int      @default(0)
+  requiredBy        String?  @db.VarChar(32)
+  notes             String?  @db.VarChar(255)
+  createdAt         DateTime @default(now()) @db.Timestamp(0)
+  updatedAt         DateTime @updatedAt @db.Timestamp(0)
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  offers Offer[]
+  orders Order[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Offer {
+  id                      String   @id @db.VarChar(64)
+  requirementId           String?  @db.VarChar(64)
+  productId               String?  @db.VarChar(64)
+  sellerName              String   @db.VarChar(120)
+  sellerUserId            String?  @db.VarChar(64)
+  sellerRating            Decimal? @db.Decimal(3, 2)
+  verified                Boolean  @default(false)
+  quantity                Decimal  @db.Decimal(12, 2)
+  unit                    String   @db.VarChar(32)
+  offeredPricePerQuintal  Decimal  @db.Decimal(12, 2)
+  distanceKm              Decimal? @db.Decimal(10, 2)
+  transportCostPerQuintal Decimal? @db.Decimal(12, 2)
+  otherCostsPerQuintal    Decimal? @db.Decimal(12, 2)
+  dealScore               Int?
+  shortlisted             Boolean  @default(false)
+  notes                   String?  @db.VarChar(500)
+
+  requirement Requirement? @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  product     Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orders      Order[]
+
+  @@index([requirementId])
+  @@index([productId])
+}
+
+model Order {
+  id                String   @id @db.VarChar(64)
+  userId            String?  @db.VarChar(64)
+  requirementId     String?  @db.VarChar(64)
+  offerId           String?  @db.VarChar(64)
+  orderDate         DateTime @db.Date
+  productName       String   @db.VarChar(120)
+  quantity          Decimal  @db.Decimal(12, 2)
+  unit              String   @db.VarChar(32)
+  pricePerQuintal   Decimal  @db.Decimal(12, 2)
+  transportCost     Decimal  @db.Decimal(12, 2)
+  otherCharges      Decimal  @db.Decimal(12, 2)
+  platformFee       Decimal  @db.Decimal(12, 2)
+  totalAmount       Decimal  @db.Decimal(12, 2)
+  deliveryAddress   String   @db.VarChar(255)
+  paymentMethod     String   @default("Bank Transfer") @db.VarChar(64)
+  sellerName        String   @db.VarChar(120)
+  sellerUserId      String?  @db.VarChar(64)
+  status            String   @db.VarChar(32)
+  timeline          Json     @default("[]")
+  // Payment state attached to the order (Phase 5): pending -> paid/failed/cancelled.
+  // Derived server-side from the same order; the payable amount always comes from
+  // totalAmount, never from the client.
+  paymentState      String   @default("pending") @db.VarChar(32)
+  paymentRef        String?  @db.VarChar(128)
+  paidAt            DateTime? @db.Timestamp(0)
+  createdAt         DateTime @default(now()) @db.Timestamp(0)
+  updatedAt         DateTime @updatedAt @db.Timestamp(0)
+
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  requirement Requirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  offer       Offer?       @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  reviews     Review[]
+  logistics   Logistics?
+  chatMessages ChatMessage[]
+
+  @@index([requirementId])
+  @@index([offerId])
+}
+
+model Review {
+  id             String   @id @default(cuid()) @db.VarChar(64)
+  orderId        String   @db.VarChar(64)
+  reviewerId     String   @db.VarChar(64)
+  reviewedUserId String   @db.VarChar(64)
+  rating         Int
+  comment        String?  @db.VarChar(1200)
+  createdAt      DateTime @default(now()) @db.Timestamp(0)
+  updatedAt      DateTime @updatedAt @db.Timestamp(0)
+
+  order          Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewer       User   @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewedUser   User   @relation("ReviewedUsers", fields: [reviewedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, reviewerId])
+  @@index([reviewedUserId])
+  @@index([orderId])
+}
+
+// In-app notification for a user (Phase 2). Records app events such as a new
+// offer on a requirement, a new order, or a received review. `read` tracks the
+// unread state shown on the home bell; push delivery can be layered on later.
+model Notification {
+  id        String   @id @default(cuid()) @db.VarChar(64)
+  userId    String   @db.VarChar(64)
+  type      String   @db.VarChar(32)
+  title     String   @db.VarChar(255)
+  body      String   @db.VarChar(500)
+  refType   String?  @db.VarChar(32)
+  refId     String?  @db.VarChar(64)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([type])
+}
+
+// Order-level logistics/delivery status (Phase 3). One record per order (no
+// duplicate order identifiers). `status` follows a fixed lifecycle:
+// pending -> pickup -> in_transit -> delivered, with `cancelled` allowed from
+// any non-terminal state. `delivered` and `cancelled` are terminal. Only an
+// authorized party (the buying user) may change status; both parties may view.
+model Logistics {
+  id        String   @id @default(cuid()) @db.VarChar(64)
+  orderId   String   @unique @db.VarChar(64)
+  status    String   @default("pending") @db.VarChar(32)
+  updatedBy String?  @db.VarChar(64)
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+  updatedAt DateTime @updatedAt @db.Timestamp(0)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+}
+
+// Persistent buyer-seller messaging for an order (Phase 7). A conversation is
+// scoped to a single order and only the order's two parties (buyer and seller)
+// may read or send messages, mirroring the party-scoped access used by reviews
+// and logistics. `body` is plain text; `senderId` records the sending party.
+model ChatMessage {
+  id        String   @id @default(cuid()) @db.VarChar(64)
+  orderId   String   @db.VarChar(64)
+  senderId  String   @db.VarChar(64)
+  body      String   @db.VarChar(2000)
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender User  @relation("ChatMessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([senderId])
+}

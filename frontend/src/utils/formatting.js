@@ -1,0 +1,29 @@
+export function formatCurrency(value) {
+  const rounded = Math.round(value);
+  return `₹${rounded.toLocaleString('en-IN')}`;
+}
+
+export function formatQuantity(quantity, unit) {
+  return `${quantity} ${unit}`;
+}
+
+export function formatDistance(km) {
+  return `${km} km`;
+}
+
+export function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+export function formatDateShort(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
