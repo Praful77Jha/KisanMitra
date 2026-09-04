@@ -44,8 +44,8 @@ export default {
   },
   languages: {
     en: 'English',
-    pa: 'ਪੰਜਾਬੀ',
     mr: 'मराठी',
+    hi: 'हिंदी',
   },
   auth: {
     welcomeBack: 'पुन्हा स्वागत आहे!',

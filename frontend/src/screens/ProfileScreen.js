@@ -151,8 +151,8 @@ export default function ProfileScreen() {
           <View style={styles.languageOptions}>
             {[
               { key: 'en' },
-              { key: 'pa' },
               { key: 'mr' },
+              { key: 'hi' },
             ].map((lang) => (
               <Pressable
                 key={lang.key}

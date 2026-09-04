@@ -1,12 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import en from './en';
-import pa from './pa';
+import hi from './hi';
 import mr from './mr';
 
 const STORAGE_KEY = 'kisanmitra.language';
 
-const translations = { en, pa, mr };
+const translations = { en, hi, mr };
+
+// Migrate the legacy Punjabi language code to Hindi: the old 'pa' choice is
+// replaced by 'hi' so users who selected Punjabi before the change keep a
+// valid language instead of falling back to the default.
+const LEGACY_LANGUAGE_MAP = { pa: 'hi' };
 
 const LanguageContext = createContext(null);
 
@@ -17,8 +22,14 @@ export function LanguageProvider({ children }) {
   useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (mounted && stored && translations[stored]) {
-        setLanguageState(stored);
+      if (mounted && stored) {
+        const migrated = LEGACY_LANGUAGE_MAP[stored] || stored;
+        if (translations[migrated]) {
+          setLanguageState(migrated);
+          if (migrated !== stored) {
+            AsyncStorage.setItem(STORAGE_KEY, migrated).catch(() => {});
+          }
+        }
       }
       if (mounted) setReady(true);
     }).catch(() => {
