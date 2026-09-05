@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Platform,
   Pressable,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import theme from '../theme';
 import { UNITS, QUALITY_GRADES, CROP_CATEGORIES } from '../constants';
 import {
@@ -26,6 +26,12 @@ import { useTranslation } from '../i18n';
 export default function SellCropScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const route = useRoute();
+  const voiceCrop = route.params?.crop;
+
+  useEffect(() => {
+    if (voiceCrop) setCropName(voiceCrop);
+  }, [voiceCrop]);
 
   const goToMarketplace = () => {
     navigation.navigate('Tabs', { screen: 'Marketplace' });

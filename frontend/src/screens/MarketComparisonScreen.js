@@ -9,7 +9,7 @@ import {
   Modal,
   Platform,
 } from 'react-native';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useIsFocused, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../theme';
 import { TRANSPORT_MODES, calculateEarnings } from '../utils/logistics';
@@ -25,6 +25,7 @@ export default function MarketComparisonScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const route = useRoute();
 
   const [crops, setCrops] = useState([]);
   const [prices, setPrices] = useState([]);
@@ -46,7 +47,12 @@ export default function MarketComparisonScreen() {
         setCrops(data.crops);
         setPrices(data.prices);
         setReferenceDate(data.referenceDate || '2026-09-03');
-        if (data.crops.length > 0) setSelectedCrop(data.crops[0]);
+        const requestedCrop = route.params?.crop;
+        if (data.crops.length > 0) {
+          setSelectedCrop(
+            requestedCrop && data.crops.includes(requestedCrop) ? requestedCrop : data.crops[0]
+          );
+        }
         setLoading(false);
       })
       .catch((e) => {
@@ -55,7 +61,7 @@ export default function MarketComparisonScreen() {
         setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [t]);
+  }, [t, route.params?.crop]);
 
   useEffect(() => {
     if (isFocused) return loadData();

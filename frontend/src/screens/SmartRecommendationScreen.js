@@ -7,7 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useIsFocused, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../theme';
 import { TRANSPORT_MODES, computeRecommendations } from '../utils/logistics';
@@ -24,6 +24,7 @@ export default function SmartRecommendationScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const route = useRoute();
 
   const [crops, setCrops] = useState([]);
   const [apmcMarkets, setApmcMarkets] = useState([]);
@@ -58,7 +59,16 @@ export default function SmartRecommendationScreen() {
         setCrops(allCrops);
         setApmcMarkets(marketData.prices || []);
         setProducts(productList);
-        if (allCrops.length > 0) setSelectedCrop(allCrops[0]);
+        const requestedCrop = route.params?.crop;
+        if (allCrops.length > 0) {
+          setSelectedCrop(
+            requestedCrop && allCrops.includes(requestedCrop) ? requestedCrop : allCrops[0]
+          );
+        }
+        const requestedQuantity = route.params?.quantity;
+        if (requestedQuantity) {
+          setQuantity(String(requestedQuantity));
+        }
         setLoading(false);
       })
       .catch((e) => {
@@ -67,7 +77,7 @@ export default function SmartRecommendationScreen() {
         setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [t]);
+  }, [t, route.params?.crop, route.params?.quantity]);
 
   useEffect(() => {
     if (isFocused) return loadData();

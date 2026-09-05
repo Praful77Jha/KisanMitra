@@ -23,6 +23,7 @@ import ProductCard from '../components/ProductCard';
 import PrimaryButton from '../components/PrimaryButton';
 import EmptyState from '../components/EmptyState';
 import LocationPickerModal from '../components/LocationPickerModal';
+import VoiceAssistantButton from '../components/VoiceAssistantButton';
 import { useTranslation } from '../i18n';
 
 const QUICK_ACTION_COLORS = [
@@ -219,6 +220,8 @@ export default function HomeScreen() {
             onFilterPress={() => navigation.navigate('Marketplace')}
           />
         </View>
+
+        <VoiceAssistantButton />
 
         <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
         <View style={styles.quickActions}>

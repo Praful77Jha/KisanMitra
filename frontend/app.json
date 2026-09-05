@@ -7,21 +7,45 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "KisanMitra needs speech recognition to understand your voice command.",
+        "NSMicrophoneUsageDescription": "KisanMitra needs microphone access to hear your voice command."
+      }
     },
     "android": {
+      "package": "com.kisanmitra.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "KisanMitra needs microphone access to hear your voice command.",
+          "speechRecognitionPermission": "KisanMitra needs speech recognition to understand your voice command.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "cdd01937-54c6-49bb-9e1d-fdfa2d29e9ad"
+      }
+    },
+    "owner": "kunni099"
   }
 }
