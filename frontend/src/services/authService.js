@@ -1,7 +1,9 @@
 import { apiPost, apiGet, apiPatch } from './apiClient';
 
-export async function register({ name, phone, password }) {
-  const response = await apiPost('/auth/register', { name, phone, password });
+export async function register({ name, phone, password, role }) {
+  const payload = { name, phone, password };
+  if (role) payload.role = role;
+  const response = await apiPost('/auth/register', payload);
   return response;
 }
 

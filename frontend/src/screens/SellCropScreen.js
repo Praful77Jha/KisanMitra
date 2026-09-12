@@ -7,7 +7,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import theme from '../theme';
 import { UNITS, QUALITY_GRADES, CROP_CATEGORIES } from '../constants';
@@ -16,7 +20,7 @@ import {
   districtsForState,
   villagesForDistrict,
 } from '../constants/locations';
-import { createProduct } from '../services/productService';
+import { createProduct, uploadImage } from '../services/productService';
 import Header from '../components/Header';
 import InputField from '../components/InputField';
 import SegmentedControl from '../components/SegmentedControl';
@@ -51,6 +55,48 @@ export default function SellCropScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [posted, setPosted] = useState(false);
+  const [photo, setPhoto] = useState(null);
+  const [photoError, setPhotoError] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  const pickPhoto = async () => {
+    if (submitting || uploading) return;
+    setPhotoError('');
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        base64: true,
+        quality: 0.4,
+      });
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        setPhotoError(t('sellCrop.photoUploadFailed'));
+        return;
+      }
+      const ext =
+        asset.mimeType === 'image/png'
+          ? 'png'
+          : asset.mimeType === 'image/webp'
+            ? 'webp'
+            : 'jpg';
+      setPhoto({
+        uri: asset.uri,
+        base64: asset.base64,
+        fileName: `crop-${Date.now()}.${ext}`,
+      });
+    } catch (e) {
+      setPhotoError(t('sellCrop.photoUploadFailed'));
+    }
+  };
+
+  const removePhoto = () => {
+    if (submitting || uploading) return;
+    setPhoto(null);
+    setPhotoError('');
+  };
 
   const pickState = (s) => {
     setState(s);
@@ -87,7 +133,20 @@ export default function SellCropScreen() {
 
     setSubmitting(true);
     setSubmitError('');
+    let imageUrl = null;
     try {
+      if (photo) {
+        setUploading(true);
+        try {
+          imageUrl = await uploadImage({ fileName: photo.fileName, base64: photo.base64 });
+        } catch (e) {
+          setSubmitError(t('sellCrop.photoUploadFailed'));
+          setUploading(false);
+          setSubmitting(false);
+          return;
+        }
+        setUploading(false);
+      }
       await createProduct({
         name: cropName.trim(),
         category,
@@ -97,6 +156,7 @@ export default function SellCropScreen() {
         pricePerQuintal: Number(price),
         location: locationText,
         description: description.trim(),
+        imageUrl,
       });
       setPosted(true);
     } catch (e) {
@@ -256,6 +316,51 @@ export default function SellCropScreen() {
           multiline
         />
 
+        <View style={styles.fieldBlock}>
+          <Text style={styles.fieldLabel}>{t('sellCrop.addPhoto')}</Text>
+          {photo ? (
+            <View style={styles.photoPreviewWrap}>
+              <Image source={{ uri: photo.uri }} style={styles.photoPreview} resizeMode="cover" />
+              <Text style={styles.photoSelected}>{t('sellCrop.photoSelected')}</Text>
+              <View style={styles.photoActions}>
+                <Pressable
+                  style={styles.photoAction}
+                  onPress={pickPhoto}
+                  disabled={submitting || uploading}
+                >
+                  <Text style={styles.photoActionText}>{t('sellCrop.changePhoto')}</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.photoAction}
+                  onPress={removePhoto}
+                  disabled={submitting || uploading}
+                >
+                  <Text style={styles.photoActionRemove}>{t('sellCrop.removePhoto')}</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              style={[styles.photoPicker, uploading && styles.photoPickerDisabled]}
+              onPress={pickPhoto}
+              disabled={submitting || uploading}
+            >
+              {uploading ? (
+                <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <>
+                  <Ionicons name="image-outline" size={26} color={theme.colors.primary} />
+                  <Text style={styles.photoPickerText}>{t('sellCrop.pickPhoto')}</Text>
+                </>
+              )}
+            </Pressable>
+          )}
+          {uploading ? (
+            <Text style={styles.photoHint}>{t('sellCrop.uploadingPhoto')}</Text>
+          ) : null}
+          {photoError ? <Text style={styles.errorText}>{photoError}</Text> : null}
+        </View>
+
         {submitError ? <Text style={styles.submitError}>{submitError}</Text> : null}
         <PrimaryButton
           title={submitting ? t('sellCrop.posting') : t('sellCrop.postButton')}
@@ -358,6 +463,69 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: theme.spacing.lg,
   },
+  photoPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.spacing.radiusLarge,
+    paddingVertical: theme.spacing.lg,
+  },
+  photoPickerDisabled: {
+    opacity: 0.5,
+  },
+  photoPickerText: {
+    fontSize: theme.typography.fontSizes.md,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.fontWeights.medium,
+  },
+  photoPreviewWrap: {
+    alignItems: 'center',
+  },
+  photoPreview: {
+    width: '100%',
+    height: 180,
+    borderRadius: theme.spacing.radiusLarge,
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  photoSelected: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.success,
+    fontWeight: theme.typography.fontWeights.medium,
+    marginTop: theme.spacing.sm,
+  },
+  photoActions: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+  },
+  photoAction: {
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.spacing.radiusRound,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  photoActionText: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.fontWeights.medium,
+  },
+  photoActionRemove: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.error,
+    fontWeight: theme.typography.fontWeights.medium,
+  },
+  photoHint: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.sm,
+  },
   submitError: {
     color: theme.colors.error,
     fontSize: theme.typography.fontSizes.sm,
@@ -369,7 +537,7 @@ const styles = StyleSheet.create({
   },
   successWrap: {
     flex: 1,
-    backgroundColor: theme.colors.badgeSuccess,
+    backgroundColor: theme.colors.background,
     padding: theme.spacing.xl,
     justifyContent: 'center',
   },

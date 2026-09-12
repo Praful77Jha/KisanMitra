@@ -10,10 +10,17 @@ import {
 import { useNavigation, useIsFocused, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../theme';
-import { TRANSPORT_MODES, computeRecommendations } from '../utils/logistics';
+import {
+  TRANSPORT_MODES,
+  computeRecommendations,
+  QUANTITY_UNIT_OPTIONS,
+  DISTANCE_UNIT_OPTIONS,
+  quantityFromQuintal,
+} from '../utils/logistics';
 import { formatCurrency } from '../utils/formatting';
 import { fetchMarketPrices } from '../services/marketPriceService';
 import { fetchProducts, fetchOffersForProduct } from '../services/productService';
+import { translateCropName } from '../utils/statusLabels';
 import Header from '../components/Header';
 import InputField from '../components/InputField';
 import PrimaryButton from '../components/PrimaryButton';
@@ -34,7 +41,9 @@ export default function SmartRecommendationScreen() {
 
   const [selectedCrop, setSelectedCrop] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [quantityUnit, setQuantityUnit] = useState('quintal');
   const [distance, setDistance] = useState('');
+  const [distanceUnit, setDistanceUnit] = useState('km');
   const [modeKey, setModeKey] = useState('tractor');
   const [otherExpenses, setOtherExpenses] = useState('');
   const [validationError, setValidationError] = useState('');
@@ -147,7 +156,9 @@ export default function SmartRecommendationScreen() {
     const ranked = computeRecommendations({
       cropName: selectedCrop,
       quantity: qty,
+      quantityUnit,
       distanceKm: dist,
+      distanceUnit,
       modeKey,
       otherExpenses,
       buyerOffers,
@@ -202,7 +213,7 @@ export default function SmartRecommendationScreen() {
                   style={[styles.cropChip, selectedCrop === crop && styles.cropChipActive]}
                 >
                   <Text style={[styles.cropChipText, selectedCrop === crop && styles.cropChipTextActive]}>
-                    {t(`cropNames.${crop}`) || crop}
+                    {translateCropName(crop, t)}
                   </Text>
                 </Pressable>
               ))}
@@ -215,6 +226,19 @@ export default function SmartRecommendationScreen() {
               placeholder={t('recommendation.quantityPlaceholder')}
               keyboardType="numeric"
             />
+            <View style={styles.unitRow}>
+              {QUANTITY_UNIT_OPTIONS.map((u) => (
+                <Pressable
+                  key={u.value}
+                  onPress={() => setQuantityUnit(u.value)}
+                  style={[styles.unitChip, quantityUnit === u.value && styles.unitChipActive]}
+                >
+                  <Text style={[styles.unitChipText, quantityUnit === u.value && styles.unitChipTextActive]}>
+                    {t(u.labelKey)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
 
             <InputField
               label={t('recommendation.distanceLabel')}
@@ -223,6 +247,19 @@ export default function SmartRecommendationScreen() {
               placeholder={t('recommendation.distancePlaceholder')}
               keyboardType="numeric"
             />
+            <View style={styles.unitRow}>
+              {DISTANCE_UNIT_OPTIONS.map((u) => (
+                <Pressable
+                  key={u.value}
+                  onPress={() => setDistanceUnit(u.value)}
+                  style={[styles.unitChip, distanceUnit === u.value && styles.unitChipActive]}
+                >
+                  <Text style={[styles.unitChipText, distanceUnit === u.value && styles.unitChipTextActive]}>
+                    {t(u.labelKey)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
             <Text style={styles.hintText}>{t('recommendation.distanceHint')}</Text>
             <Text style={styles.hintText}>{t('recommendation.distanceDisclaimer')}</Text>
 
@@ -307,6 +344,10 @@ function BestOptionCard({ best, second, t }) {
     if (reasons.length === 0) reasons.push('higherEarnings');
   }
 
+  const unitLabel = t(`recommendation.quantityUnitShort${best.quantityUnit.charAt(0).toUpperCase()}${best.quantityUnit.slice(1)}`);
+  const quintals = best.totalAmount / best.amountPerQtl;
+  const shownQty = Math.round(quantityFromQuintal(quintals, best.quantityUnit) * 100) / 100;
+
   return (
     <View style={styles.heroCard}>
       <View style={styles.heroHeader}>
@@ -318,7 +359,7 @@ function BestOptionCard({ best, second, t }) {
       <Text style={styles.heroPrice}>{formatCurrency(best.amountPerQtl)}</Text>
       <Text style={styles.heroPerQtl}>{t('recommendation.estimatedPerQtl')}</Text>
       <Text style={styles.heroTotal}>
-        {t('recommendation.estimatedTotalFor', { qty: best.totalAmount / best.amountPerQtl })} {formatCurrency(best.totalAmount)} {t('recommendation.estimatedTotal')}
+        {t('recommendation.estimatedTotalFor', { qty: shownQty, unit: unitLabel })} {formatCurrency(best.totalAmount)} {t('recommendation.estimatedTotal')}
       </Text>
 
       <View style={styles.whyBlock}>
@@ -335,6 +376,10 @@ function BestOptionCard({ best, second, t }) {
 }
 
 function OptionCard({ option, rank, typeLabel, t }) {
+  const unitLabel = t(`recommendation.quantityUnitShort${option.quantityUnit.charAt(0).toUpperCase()}${option.quantityUnit.slice(1)}`);
+  const quintals = option.totalAmount / option.amountPerQtl;
+  const shownQty = Math.round(quantityFromQuintal(quintals, option.quantityUnit) * 100) / 100;
+
   return (
     <View style={styles.optionCard}>
       <View style={styles.optionHeader}>
@@ -350,7 +395,7 @@ function OptionCard({ option, rank, typeLabel, t }) {
       </View>
       <View style={styles.optionRow}>
         <Text style={styles.optionLabel}>
-          {t('recommendation.estimatedTotalFor', { qty: option.totalAmount / option.amountPerQtl })}
+          {t('recommendation.estimatedTotalFor', { qty: shownQty, unit: unitLabel })}
         </Text>
         <Text style={styles.optionTotal}>
           {formatCurrency(option.totalAmount)} {t('recommendation.estimatedTotal')}
@@ -424,6 +469,33 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs - 4,
     marginBottom: theme.spacing.md,
     lineHeight: 16,
+  },
+  unitRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  unitChip: {
+    flex: 1,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.spacing.radiusMedium,
+    alignItems: 'center',
+    backgroundColor: theme.colors.surfaceAlt || theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  unitChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  unitChipText: {
+    fontSize: theme.typography.fontSizes.sm,
+    fontWeight: theme.typography.fontWeights.medium,
+    color: theme.colors.textSecondary,
+  },
+  unitChipTextActive: {
+    color: theme.colors.textOnPrimary,
+    fontWeight: theme.typography.fontWeights.semibold,
   },
   transportRow: {
     flexDirection: 'row',

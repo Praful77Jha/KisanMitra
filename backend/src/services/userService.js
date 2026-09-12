@@ -11,10 +11,10 @@ async function findUserById(id) {
   return prisma.user.findUnique({ where: { id } });
 }
 
-async function createUser({ name, phone, password }) {
+async function createUser({ name, phone, password, role = 'FARMER' }) {
   const passwordHash = await hashPassword(password);
   return prisma.user.create({
-    data: { name, phone, passwordHash },
+    data: { name, phone, passwordHash, role },
   });
 }
 

@@ -16,6 +16,10 @@ model User {
   passwordHash String   @db.VarChar(255)
   location     String?  @db.VarChar(120)
   avatarColor  String?  @db.VarChar(32)
+  // App role for the 3 user types: FARMER (default), BUYER, TRANSPORTER.
+  // Kept as a plain string with documented values, matching the project's
+  // string-status convention (no Prisma enums are used anywhere).
+  role         String   @default("FARMER") @db.VarChar(32)
   createdAt    DateTime @default(now())
 
   requirements Requirement[]
@@ -25,6 +29,13 @@ model User {
   notifications Notification[]
   chatMessagesSent ChatMessage[] @relation("ChatMessagesSent")
   products     Product[] @relation("ProductSeller")
+  transporterProfile   TransporterProfile?
+  transportRequests    TransportRequest[]    @relation("TransportRequester")
+  transportOffers      TransportOffer[]      @relation("TransportOfferTransporter")
+  transportJobs        TransportJob[]        @relation("TransportJobTransporter")
+  transportReviewsGiven    TransportReview[] @relation("TransportReviewReviewer")
+  transportReviewsReceived TransportReview[] @relation("TransportReviewTransporter")
+  transportChatMessages    TransportChatMessage[]
 }
 
 model Product {
@@ -45,6 +56,7 @@ model Product {
   otherCosts       Decimal? @db.Decimal(12, 2)
   dealScore        Int?
   imageFile        String?  @db.VarChar(255)
+  imageUrl         String?  @db.VarChar(500)
   description      String?  @db.Text
 
   offers Offer[]
@@ -139,6 +151,8 @@ model Order {
   reviews     Review[]
   logistics   Logistics?
   chatMessages ChatMessage[]
+  transportRequests TransportRequest[]
+  transportJobs     TransportJob[]
 
   @@index([requirementId])
   @@index([offerId])
@@ -237,5 +251,179 @@ model ChatMessage {
   sender User  @relation("ChatMessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
+  @@index([senderId])
+}
+
+// Transporter enrollment profile (Transport & Logistics module). One per user.
+// `vehicleTypes` is a simple comma-separated list (e.g. "Tractor-Trolley,Mini Truck")
+// following the project's plain-string convention. `vehicleCapacity` stores the
+// maximum load (in quintals) the transporter can carry in one trip, used to
+// match requests against compatible transporters and to auto-derive quote
+// pricing inputs. `avgRating` mirrors the sellerRating convention used by
+// Product/Offer. No KYC in this version.
+model TransporterProfile {
+  id              String   @id @default(cuid()) @db.VarChar(64)
+  userId          String   @unique @db.VarChar(64)
+  vehicleTypes    String   @db.VarChar(255)
+  vehicleCapacity Decimal? @db.Decimal(8, 2)
+  baseLocation    String   @db.VarChar(120)
+  description     String?  @db.VarChar(500)
+  avgRating       Decimal? @db.Decimal(3, 2)
+  createdAt       DateTime @default(now()) @db.Timestamp(0)
+  updatedAt       DateTime @updatedAt @db.Timestamp(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// A transport request posted by a FARMER or BUYER. Can be created standalone or
+// optionally attached to an existing Order (`orderId`). `status` values:
+// OPEN -> IN_PROGRESS -> COMPLETED, with CANCELLED allowed from any non-terminal
+// state. `expectedBudget` (optional) records the requester's expected price. The
+// optional `pickupLat/Lng`/`dropLat/Lng` coordinates and server-computed
+// `distanceKm` enable automatic distance-based estimates; when coordinates are
+// absent, distance remains null.
+model TransportRequest {
+  id             String   @id @default(cuid()) @db.VarChar(64)
+  userId         String?  @db.VarChar(64)
+  cropName       String   @db.VarChar(120)
+  quantity       Decimal  @db.Decimal(12, 2)
+  unit           String   @db.VarChar(32)
+  pickupLocation String   @db.VarChar(120)
+  dropLocation   String   @db.VarChar(120)
+  requiredBy     String?  @db.VarChar(32)
+  vehicleType    String?  @db.VarChar(32)
+  expectedBudget Decimal? @db.Decimal(12, 2)
+  distanceKm     Decimal? @db.Decimal(10, 2)
+  pickupLat      Decimal? @db.Decimal(9, 6)
+  pickupLng      Decimal? @db.Decimal(9, 6)
+  dropLat        Decimal? @db.Decimal(9, 6)
+  dropLng        Decimal? @db.Decimal(9, 6)
+  notes          String?  @db.VarChar(500)
+  status         String   @default("OPEN") @db.VarChar(32)
+  orderId        String?  @db.VarChar(64)
+  createdAt      DateTime @default(now()) @db.Timestamp(0)
+  updatedAt      DateTime @updatedAt @db.Timestamp(0)
+
+  requester    User?                 @relation("TransportRequester", fields: [userId], references: [id], onDelete: SetNull)
+  order        Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  offers       TransportOffer[]
+  jobs         TransportJob[]
+  chatMessages TransportChatMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderId])
+}
+
+// A transporter's quote against a TransportRequest. A quote thread represents the
+// negotiation chain between the request owner and one transporter: the initial
+// SUBMITTED quote, any COUNTER offers from the owner, and a final FINAL quote
+// that both sides agree on. `parentOfferId` links a counter offer back to the
+// quote it answers, `offerType` is INITIAL|COUNTER|FINAL, and `negotiationRound`
+// tracks depth in the thread. `status` reduces to SUBMITTED -> ACCEPTED / REJECTED
+// on the root quote; a thread never has more than one non-rejected quote active.
+// `vehicleType` and `distanceKm` are auto-derived server-side (vehicle type from
+// the transporter's profile, distance from request coordinates when available).
+// Access model intentionally SEPARATE from Offer: transporters must see the
+// request before quoting, while only the request owner may view/compare quotes.
+model TransportOffer {
+  id                 String   @id @default(cuid()) @db.VarChar(64)
+  transportRequestId String   @db.VarChar(64)
+  transporterId      String   @db.VarChar(64)
+  transporterName    String   @db.VarChar(120)
+  quotedAmount       Decimal  @db.Decimal(12, 2)
+  vehicleType        String   @db.VarChar(32)
+  distanceKm         Decimal? @db.Decimal(10, 2)
+  notes              String?  @db.VarChar(500)
+  status             String   @default("SUBMITTED") @db.VarChar(32)
+  parentOfferId      String?  @db.VarChar(64)
+  offerType          String   @default("INITIAL") @db.VarChar(16)
+  negotiationRound   Int      @default(1)
+  createdAt          DateTime @default(now()) @db.Timestamp(0)
+  updatedAt          DateTime @updatedAt @db.Timestamp(0)
+
+  transportRequest TransportRequest @relation(fields: [transportRequestId], references: [id], onDelete: Cascade)
+  transporter      User             @relation("TransportOfferTransporter", fields: [transporterId], references: [id], onDelete: Cascade)
+  parentOffer      TransportOffer?  @relation("TransportOfferChain", fields: [parentOfferId], references: [id], onDelete: SetNull)
+  childOffers      TransportOffer[] @relation("TransportOfferChain")
+  job              TransportJob?
+
+  @@index([transportRequestId])
+  @@index([transporterId])
+  @@index([status])
+  @@index([parentOfferId])
+}
+
+// The accepted transport assignment. Created when the request owner accepts a
+// TransportOffer (one job per accepted offer). `status` lifecycle:
+// BOOKED -> DRIVER_ASSIGNED -> PICKUP_STARTED -> PICKED_UP -> IN_TRANSIT ->
+// DELIVERED, with CANCELLED allowed from any non-terminal state. Transition
+// validation is enforced server-side in a later phase. `updatedBy` records the
+// last actor (mirrors the Logistics convention).
+model TransportJob {
+  id                 String   @id @default(cuid()) @db.VarChar(64)
+  transportRequestId String   @db.VarChar(64)
+  transportOfferId   String   @unique @db.VarChar(64)
+  transporterId      String   @db.VarChar(64)
+  orderId            String?  @db.VarChar(64)
+  status             String   @default("BOOKED") @db.VarChar(32)
+  updatedBy          String?  @db.VarChar(64)
+  createdAt          DateTime @default(now()) @db.Timestamp(0)
+  updatedAt          DateTime @updatedAt @db.Timestamp(0)
+
+  transportRequest TransportRequest @relation(fields: [transportRequestId], references: [id], onDelete: Cascade)
+  transportOffer   TransportOffer   @relation(fields: [transportOfferId], references: [id], onDelete: Cascade)
+  transporter      User             @relation("TransportJobTransporter", fields: [transporterId], references: [id], onDelete: Cascade)
+  order            Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  reviews          TransportReview[]
+
+  @@index([transportRequestId])
+  @@index([transporterId])
+  @@index([status])
+  @@index([orderId])
+}
+
+// Transporter rating against a TransportJob. Deliberately a SEPARATE model from
+// the order-based Review: eligibility (job DELIVERED) and targets differ.
+// `rating` is validated as 1-5 at the API layer in a later phase; one rating per
+// reviewer per job is enforced by the unique constraint.
+model TransportReview {
+  id            String   @id @default(cuid()) @db.VarChar(64)
+  jobId         String   @db.VarChar(64)
+  reviewerId    String   @db.VarChar(64)
+  transporterId String   @db.VarChar(64)
+  rating        Int
+  comment       String?  @db.VarChar(1200)
+  createdAt     DateTime @default(now()) @db.Timestamp(0)
+  updatedAt     DateTime @updatedAt @db.Timestamp(0)
+
+  job         TransportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reviewer    User         @relation("TransportReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  transporter User         @relation("TransportReviewTransporter", fields: [transporterId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, reviewerId])
+  @@index([transporterId])
+  @@index([jobId])
+}
+
+// Persistent requester-transporter messaging for a single transport request.
+// Scoped to the request so the request owner and any transporter who quoted
+// (or is considering quoting) can discuss pickup/drop details and negotiate.
+// `body` is plain text; `senderId` records the sending party. Kept as a
+// SEPARATE model from ChatMessage (which is order-scoped and requires a
+// non-null orderId) to avoid a breaking change to the existing order chat.
+model TransportChatMessage {
+  id                 String   @id @default(cuid()) @db.VarChar(64)
+  transportRequestId String   @db.VarChar(64)
+  senderId           String   @db.VarChar(64)
+  body               String   @db.VarChar(2000)
+  createdAt          DateTime @default(now()) @db.Timestamp(0)
+
+  transportRequest TransportRequest @relation(fields: [transportRequestId], references: [id], onDelete: Cascade)
+  sender           User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([transportRequestId])
   @@index([senderId])
 }

@@ -1,21 +1,13 @@
 const { USE_DATABASE } = require('../config/config');
+const { marketPrices: demoMarketPrices, MSAMB_DATE } = require('../demo/demoData');
 
-const REFERENCE_DATE = '2026-09-03';
+const REFERENCE_DATE = MSAMB_DATE;
 const SOURCE = 'MSAMB';
 
-// In-memory MSAMB reference data (fallback when USE_DATABASE is false).
-const inMemoryPrices = [
-  { cropName: 'Onion',   marketName: 'Ahmednagar', pricePerQtl: 3100 },
-  { cropName: 'Onion',   marketName: 'Solapur',    pricePerQtl: 3400 },
-  { cropName: 'Onion',   marketName: 'Lasalgaon',  pricePerQtl: 4525 },
-  { cropName: 'Soybean', marketName: 'Akola',      pricePerQtl: 6080 },
-  { cropName: 'Soybean', marketName: 'Amravati',   pricePerQtl: 5900 },
-  { cropName: 'Soybean', marketName: 'Sangli',     pricePerQtl: 6850 },
-  { cropName: 'Tur',     marketName: 'Akola',      pricePerQtl: 8255 },
-  { cropName: 'Tur',     marketName: 'Amravati',   pricePerQtl: 8325 },
-  { cropName: 'Wheat',   marketName: 'Solapur',    pricePerQtl: 3665 },
-  { cropName: 'Maize',   marketName: 'Lasalgaon',  pricePerQtl: 2551 },
-];
+// In-memory MSAMB reference data (fallback when USE_DATABASE is false), seeded
+// from the shared demo catalog so DB mode and in-memory mode are identical. Rows
+// carry an optional per-record referenceDate (older demo batches).
+const inMemoryPrices = demoMarketPrices;
 
 async function findByCrop(cropName) {
   if (USE_DATABASE) {
@@ -46,7 +38,7 @@ async function findByCrop(cropName) {
     cropName: r.cropName,
     marketName: r.marketName,
     pricePerQtl: r.pricePerQtl,
-    referenceDate: REFERENCE_DATE,
+    referenceDate: r.referenceDate || REFERENCE_DATE,
     source: SOURCE,
     unit: 'Quintal',
   }));

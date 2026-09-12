@@ -20,6 +20,9 @@ import {
   deleteReview,
 } from '../services/reviewService';
 import { useAuth } from '../context/AuthContext';
+import { getMyTransportRequests, getTransportJobs } from '../services/transportService';
+import { isRequesterRole } from '../utils/transportRole';
+import { jobStatusLabel, requestStatusLabel } from '../utils/transportStatus';
 import { formatCurrency, formatQuantity, formatDate, formatDateShort } from '../utils/formatting';
 import { translateOrderStatus } from '../utils/statusLabels';
 import Header from '../components/Header';
@@ -45,10 +48,12 @@ export default function OrderDetailsScreen() {
   const route = useRoute();
   const orderId = route.params?.orderId;
 
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [transportSection, setTransportSection] = useState(null);
 
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -98,6 +103,43 @@ export default function OrderDetailsScreen() {
       });
     return () => { cancelled = true; };
   }, [order, orderId]);
+
+  useEffect(() => {
+    if (!order || !user?.id || !isRequesterRole(role)) {
+      setTransportSection(null);
+      return undefined;
+    }
+    if (order.userId !== user.id && order.sellerUserId !== user.id) {
+      setTransportSection(null);
+      return undefined;
+    }
+    let cancelled = false;
+    Promise.all([getMyTransportRequests(), getTransportJobs()])
+      .then(([requestList, jobList]) => {
+        if (cancelled) return;
+        const requests = requestList || [];
+        const jobListSafe = jobList || [];
+        const requestForOrder =
+          requests.find((r) => r.orderId === order.id) || null;
+        const jobForOrder =
+          jobListSafe.find((j) => j.orderId === order.id) ||
+          (requestForOrder
+            ? jobListSafe.find((j) => j.transportRequestId === requestForOrder.id)
+            : null) ||
+          null;
+        if (jobForOrder) {
+          setTransportSection({ kind: 'job', job: jobForOrder, request: requestForOrder });
+        } else if (requestForOrder) {
+          setTransportSection({ kind: 'request', request: requestForOrder });
+        } else {
+          setTransportSection({ kind: 'none' });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setTransportSection({ kind: 'none' });
+      });
+    return () => { cancelled = true; };
+  }, [order, user?.id, role]);
 
   if (loading) {
     return (
@@ -281,6 +323,45 @@ export default function OrderDetailsScreen() {
           <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
         </Pressable>
 
+        {transportSection ? (
+          <>
+            <Text style={styles.sectionTitle}>{t('transport.linkedTransport')}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.logisticsCard, pressed && styles.logisticsCardPressed]}
+              onPress={() => {
+                if (transportSection.kind === 'job') {
+                  navigation.navigate('TransportJob', { jobId: transportSection.job.id });
+                } else if (transportSection.kind === 'request') {
+                  navigation.navigate('TransportRequestDetails', {
+                    requestId: transportSection.request.id,
+                  });
+                } else {
+                  navigation.navigate('TransportRequestForm', { orderId: order.id });
+                }
+              }}
+            >
+              <Ionicons name="car-outline" size={22} color={theme.colors.primary} />
+              <View style={styles.logisticsCardText}>
+                <Text style={styles.logisticsCardTitle}>
+                  {transportSection.kind === 'job'
+                    ? t('transport.viewTransportJob')
+                    : transportSection.kind === 'request'
+                    ? t('transport.viewTransportRequest')
+                    : t('transport.arrangeTransport')}
+                </Text>
+                <Text style={styles.logisticsCardSubtitle}>
+                  {transportSection.kind === 'job'
+                    ? jobStatusLabel(transportSection.job.status, t)
+                    : transportSection.kind === 'request'
+                    ? requestStatusLabel(transportSection.request.status, t)
+                    : t('transport.arrangeTransportHint')}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+            </Pressable>
+          </>
+        ) : null}
+
         <Text style={styles.sectionTitle}>{t('chat.title')}</Text>
         <Pressable
           style={({ pressed }) => [styles.logisticsCard, pressed && styles.logisticsCardPressed]}
@@ -296,7 +377,7 @@ export default function OrderDetailsScreen() {
           <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
         </Pressable>
 
-        {order.status === 'Order Confirmed' ? (
+        {order.userId === user?.id && order.paymentState !== 'paid' && order.status === 'Order Confirmed' ? (
           <Pressable
             style={({ pressed }) => [styles.cancelButton, pressed && styles.cancelButtonPressed]}
             onPress={handleCancel}

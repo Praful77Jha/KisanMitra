@@ -25,6 +25,7 @@ import EmptyState from '../components/EmptyState';
 import LocationPickerModal from '../components/LocationPickerModal';
 import VoiceAssistantButton from '../components/VoiceAssistantButton';
 import { useTranslation } from '../i18n';
+import { homeTransportAction } from '../utils/transportRole';
 
 const QUICK_ACTION_COLORS = [
   theme.colors.primary,
@@ -39,7 +40,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { user, updateLocation } = useAuth();
+  const { user, updateLocation, role } = useAuth();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
   const [products, setProducts] = useState([]);
@@ -133,6 +134,12 @@ export default function HomeScreen() {
     if (action.key === 'seller_needs') {
       navigation.navigate('AvailableNeeds');
     }
+    if (action.key === 'arrange_transport') {
+      navigation.navigate('TransportRequestForm');
+    }
+    if (action.key === 'available_transport_jobs') {
+      navigation.navigate('AvailableTransportRequests');
+    }
   };
 
   const handleCategoryChange = (category) => {
@@ -148,6 +155,15 @@ export default function HomeScreen() {
   const handleLocationConfirm = (location) => {
     return updateLocation(location);
   };
+
+  const roleQuickAction = homeTransportAction(role);
+  const quickActions = [
+    {
+      key: roleQuickAction.action,
+      icon: roleQuickAction.icon,
+    },
+    ...mockQuickActions,
+  ];
 
   const heroIllustration = Math.min(width * 0.4, 170);
 
@@ -225,8 +241,10 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
         <View style={styles.quickActions}>
-          {mockQuickActions.map((action, index) => {
+          {quickActions.map((action, index) => {
             const labelKey = {
+              arrange_transport: 'quickActions.arrangeTransport',
+              available_transport_jobs: 'quickActions.availableTransportJobs',
               sell_crop: 'quickActions.sellCrop',
               all_products: 'quickActions.allProducts',
               buyer_req: 'quickActions.myRequirements',

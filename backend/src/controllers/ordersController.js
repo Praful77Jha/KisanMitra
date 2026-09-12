@@ -101,7 +101,9 @@ async function getAllOrders(req, res, next) {
       return next(error);
     }
   }
-  const mine = orders.filter((o) => o.userId === req.user.id);
+  const mine = orders.filter(
+    (o) => o.userId === req.user.id || o.sellerUserId === req.user.id
+  );
   res.status(200).json({
     success: true,
     data: mine,
@@ -302,6 +304,13 @@ async function cancelOrder(req, res, next) {
           message: 'Order not found',
         });
       }
+      // No refund facility exists: a paid order cannot be cancelled.
+      if (order.paymentState === 'paid') {
+        return res.status(400).json({
+          success: false,
+          message: 'This order has already been paid and cannot be cancelled',
+        });
+      }
       if (order.status !== CANCELLABLE_ORDER_STATUS) {
         return res.status(400).json({
           success: false,
@@ -323,6 +332,13 @@ async function cancelOrder(req, res, next) {
     return res.status(404).json({
       success: false,
       message: 'Order not found',
+    });
+  }
+  // No refund facility exists: a paid order cannot be cancelled.
+  if (order.paymentState === 'paid') {
+    return res.status(400).json({
+      success: false,
+      message: 'This order has already been paid and cannot be cancelled',
     });
   }
   if (order.status !== CANCELLABLE_ORDER_STATUS) {

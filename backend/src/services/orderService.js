@@ -55,9 +55,15 @@ function formatOrder(order) {
   };
 }
 
+// Both the buyer (userId) and the seller (sellerUserId) are parties to an order,
+// so a user's order list contains the orders they placed AND the orders they
+// received for their products. A single order is returned at most once (the OR
+// conditions can never both match the same row for distinct parties).
 async function findAllOrders(userId) {
   const orders = await prisma.order.findMany({
-    where: { userId },
+    where: {
+      OR: [{ userId }, { sellerUserId: userId }],
+    },
     orderBy: { id: 'asc' },
   });
   return orders.map(formatOrder);

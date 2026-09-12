@@ -1,13 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '8mb' }));
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -18,6 +20,15 @@ app.get('/api/health', (req, res) => {
 
 const productsRouter = require('./routes/products');
 app.use('/api/products', productsRouter);
+
+const uploadsRouter = require('./routes/uploads');
+app.use('/api/upload', uploadsRouter);
+
+// Serve farmer-uploaded crop photos from backend/uploads. The directory is
+// created if missing; express.static only exposes files inside this folder.
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/api/uploads', express.static(uploadsDir));
 
 const requirementsRouter = require('./routes/requirements');
 app.use('/api/requirements', requirementsRouter);
@@ -48,6 +59,21 @@ app.use('/api/notifications', notificationsRouter);
 
 const chatRouter = require('./routes/chat');
 app.use('/api/chat', chatRouter);
+
+const transporterRouter = require('./routes/transporter');
+app.use('/api/transporter', transporterRouter);
+
+const transportRequestsRouter = require('./routes/transportRequests');
+app.use('/api/transport-requests', transportRequestsRouter);
+
+const transportQuotesRouter = require('./routes/transportQuotes');
+app.use('/api/transport-quotes', transportQuotesRouter);
+
+const transportJobsRouter = require('./routes/transportJobs');
+app.use('/api/transport-jobs', transportJobsRouter);
+
+const transportersRouter = require('./routes/transporters');
+app.use('/api/transporters', transportersRouter);
 
 app.use((req, res) => {
   res.status(404).json({

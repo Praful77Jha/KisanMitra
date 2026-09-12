@@ -1,5 +1,6 @@
 import { mockRequirements, mockOffers, mockOrders } from '../data/mockData';
 import { apiGet, apiPost, apiDelete } from './apiClient';
+import API_BASE_URL from '../config';
 
 const IMAGE_MAP = {
   'basmati-rice.png': require('../../assets/products/basmati-rice.png'),
@@ -10,13 +11,28 @@ const IMAGE_MAP = {
   'kesar-mango.png': require('../../assets/products/kesar-mango.png'),
 };
 
+// Central image resolver used by every product surface (Marketplace, Home cards,
+// Product Details, Compare Deals, Smart Recommendations). Do not duplicate URL
+// building logic in screens.
 function attachImage(product) {
+  if (product.imageUrl) {
+    return { ...product, image: { uri: `${API_BASE_URL}${product.imageUrl}` } };
+  }
   if (product.image) return product;
   return { ...product, image: IMAGE_MAP[product.imageFile] || null };
 }
 
 function attachImages(products) {
   return products.map(attachImage);
+}
+
+// Upload a gallery-picked crop photo (base64) and return the API imageUrl path.
+export async function uploadImage({ fileName, base64 }) {
+  const response = await apiPost('/upload', { fileName, base64 });
+  if (response.success && response.data && response.data.url) {
+    return response.data.url;
+  }
+  throw new Error('Could not upload photo');
 }
 
 export async function fetchProducts() {

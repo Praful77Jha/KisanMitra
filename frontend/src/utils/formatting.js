@@ -28,3 +28,14 @@ export function formatDateShort(dateString) {
     month: 'short',
   });
 }
+
+export function formatDateTime(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}

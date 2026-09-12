@@ -19,6 +19,10 @@ const ALLOWED_TRANSITIONS = {
   cancelled: [],
 };
 
+// Mirror of ordersController.ORDER_STATUS_CANCELLED; delivery-money rules: a
+// cancelled order is no longer payable under any payment state.
+const ORDER_STATUS_CANCELLED = 'Cancelled';
+
 function stateOf(order) {
   return order && order.paymentState ? order.paymentState : 'pending';
 }
@@ -126,6 +130,13 @@ async function confirmPayment(req, res, next) {
     return res.status(409).json({
       success: false,
       message: 'Order is already paid',
+    });
+  }
+  // A cancelled order must never be payable, regardless of its payment state.
+  if (order.status === ORDER_STATUS_CANCELLED) {
+    return res.status(400).json({
+      success: false,
+      message: 'A cancelled order cannot be paid',
     });
   }
   if (!canTransition(current, 'paid')) {

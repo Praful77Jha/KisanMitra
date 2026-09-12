@@ -31,7 +31,7 @@ function formatProduct(product) {
 // set server-side so a fresh listing is stored neutral (not verified, no
 // self-asserted rating) exactly like a freshly submitted offer.
 async function createProduct(data) {
-  const { sellerUserId, seller, name, category, grade, quantity, unit, pricePerQuintal, location, description } = data;
+  const { sellerUserId, seller, name, category, grade, quantity, unit, pricePerQuintal, location, description, imageUrl } = data;
   const { Prisma } = require('@prisma/client');
   const product = await prisma.product.create({
     data: {
@@ -48,6 +48,7 @@ async function createProduct(data) {
       location: location || null,
       dealScore: 50,
       description: description || null,
+      imageUrl: imageUrl || null,
     },
   });
   return formatProduct(product);

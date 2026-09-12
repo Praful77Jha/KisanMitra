@@ -40,3 +40,14 @@ export function translateCategory(category, t) {
   const key = CATEGORY_KEY[category] || CATEGORY_KEY[category.toLowerCase()];
   return key ? t(key) : category;
 }
+
+// Translate a crop name via i18n when a known translation exists. Free-text
+// crop names such as "Maize White 2026" are returned unchanged instead of
+// showing a dotted i18n key, matching how other free-text values are handled.
+// Unknown keys make t() return the key itself with a "cropNames." prefix.
+export function translateCropName(crop, t) {
+  if (!crop) return '';
+  const label = t(`cropNames.${crop}`);
+  if (typeof label === 'string' && label.startsWith('cropNames.')) return crop;
+  return label;
+}

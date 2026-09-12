@@ -341,7 +341,7 @@ test('getOrderById returns 404 for another user\'s order', () => {
   assert.equal(statusOf(resA), 200);
 });
 
-test('getAllOrders returns only the caller-owned orders', () => {
+test('getAllOrders shows the buyer their placed orders and the seller their received orders, but never a stranger', () => {
   const { requirementId, offerId } = createLinkedRequirementAndOffer('user-a', 'seller-b', 'Seller B');
   const created = makeRes();
   createOrder(
@@ -351,13 +351,45 @@ test('getAllOrders returns only the caller-owned orders', () => {
   );
   const createdId = bodyOf(created).data.id;
 
-  const resA = makeRes();
-  getAllOrders({ user: { id: 'user-a' } }, resA, () => assert.fail('unexpected error'));
-  assert.equal(bodyOf(resA).data.some((o) => o.id === createdId), true);
+  const resBuyer = makeRes();
+  getAllOrders({ user: { id: 'user-a' } }, resBuyer, () => assert.fail('unexpected error'));
+  assert.equal(bodyOf(resBuyer).data.some((o) => o.id === createdId), true, 'buyer sees the order they placed');
 
-  const resB = makeRes();
-  getAllOrders({ user: { id: 'user-b' } }, resB, () => assert.fail('unexpected error'));
-  assert.equal(bodyOf(resB).data.some((o) => o.id === createdId), false);
+  const resSeller = makeRes();
+  getAllOrders({ user: { id: 'seller-b' } }, resSeller, () => assert.fail('unexpected error'));
+  assert.equal(bodyOf(resSeller).data.some((o) => o.id === createdId), true, 'seller sees the order they received');
+
+  const resStranger = makeRes();
+  getAllOrders({ user: { id: 'user-b' } }, resStranger, () => assert.fail('unexpected error'));
+  assert.equal(bodyOf(resStranger).data.some((o) => o.id === createdId), false, 'stranger never sees the order');
+});
+
+test('getAllOrders returns each order at most once even when a user has both placed and received orders', () => {
+  const placed = createLinkedRequirementAndOffer('dual-user', 'seller-b', 'Seller B');
+  const placedRes = makeRes();
+  createOrder(
+    { user: { id: 'dual-user' }, body: { requirementId: placed.requirementId, offerId: placed.offerId } },
+    placedRes,
+    () => assert.fail('unexpected error')
+  );
+  const placedId = bodyOf(placedRes).data.id;
+
+  const received = createLinkedRequirementAndOffer('buyer-c', 'dual-user', 'Dual User');
+  const receivedRes = makeRes();
+  createOrder(
+    { user: { id: 'buyer-c' }, body: { requirementId: received.requirementId, offerId: received.offerId } },
+    receivedRes,
+    () => assert.fail('unexpected error')
+  );
+  const receivedId = bodyOf(receivedRes).data.id;
+
+  const res = makeRes();
+  getAllOrders({ user: { id: 'dual-user' } }, res, () => assert.fail('unexpected error'));
+  const list = bodyOf(res).data;
+  assert.equal(list.some((o) => o.id === placedId), true, 'user sees the order they placed');
+  assert.equal(list.some((o) => o.id === receivedId), true, 'user sees the order they received');
+  assert.equal(list.filter((o) => o.id === placedId).length, 1, 'placed order appears exactly once');
+  assert.equal(list.filter((o) => o.id === receivedId).length, 1, 'received order appears exactly once');
 });
 
 test('getOrderById is accessible to both buyer and seller parties, but not a stranger', () => {

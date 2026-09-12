@@ -1,6 +1,12 @@
 const userService = require('../services/userService');
 const { signToken } = require('../utils/jwt');
 
+// App roles accepted at registration. Missing role defaults to FARMER; anything
+// else is rejected with 400. Kept as plain strings (no PRisma enums), matching
+// the project-wide string-status convention.
+const VALID_ROLES = ['FARMER', 'BUYER', 'TRANSPORTER'];
+const DEFAULT_ROLE = 'FARMER';
+
 function toSafeUser(user) {
   if (!user) return null;
   const { passwordHash, ...safe } = user;
@@ -9,12 +15,23 @@ function toSafeUser(user) {
 
 async function register(req, res, next) {
   try {
-    const { name, phone, password } = req.body;
+    const { name, phone, password, role } = req.body;
 
     if (!name || !phone || !password) {
       return res.status(400).json({
         success: false,
         message: 'name, phone, and password are required',
+      });
+    }
+
+    // Role is optional and validated. The JWT payload stays { id, phone }; the
+    // authoritative role lives on the user row and is loaded by authorization
+    // middleware when needed, never trusted from the token or later bodies.
+    const normalizedRole = role === undefined || role === null ? DEFAULT_ROLE : role;
+    if (!VALID_ROLES.includes(normalizedRole)) {
+      return res.status(400).json({
+        success: false,
+        message: 'role must be FARMER, BUYER, or TRANSPORTER',
       });
     }
 
@@ -26,7 +43,7 @@ async function register(req, res, next) {
       });
     }
 
-    const user = await userService.createUser({ name, phone, password });
+    const user = await userService.createUser({ name, phone, password, role: normalizedRole });
 
     return res.status(201).json({
       success: true,

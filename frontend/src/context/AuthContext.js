@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { register as registerRequest, login as loginRequest, getMe, updateLocation as updateLocationRequest } from '../services/authService';
 import { saveToken, getToken, removeToken } from '../services/tokenStorage';
 import { setSessionExpiredHandler, clearSessionExpiredHandler } from '../services/authEvents';
+import { normalizeRole } from '../utils/transportRole';
 
 const AuthContext = createContext(null);
 
@@ -125,7 +126,11 @@ export function AuthProvider({ children }) {
     throw new Error('Could not update location');
   }, []);
 
-  const value = { user, token, loading, login, register, logout, updateLocation };
+  // Frontend role is UI/navigation only. The backend is authoritative and sends
+  // the user's role on register/login/me; unknown or stale sessions fall back to
+  // FARMER (the backend default).
+  const role = user && user.role ? normalizeRole(user.role) : 'FARMER';
+  const value = { user, token, loading, role, login, register, logout, updateLocation };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

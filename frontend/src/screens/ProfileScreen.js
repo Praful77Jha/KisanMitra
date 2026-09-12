@@ -15,6 +15,7 @@ import { fetchRequirements, fetchOrders } from '../services/productService';
 import { fetchUserReviews } from '../services/reviewService';
 import PrimaryButton from '../components/PrimaryButton';
 import { useTranslation, useLanguage } from '../i18n';
+import { transportProfileActions } from '../utils/transportRole';
 
 function initials(name) {
   return name
@@ -28,7 +29,7 @@ function initials(name) {
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user, logout, role } = useAuth();
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
 
@@ -146,6 +147,21 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
 
+        <Text style={styles.sectionTitle}>{t('profile.transport')}</Text>
+        <View style={styles.activityCard}>
+          {transportProfileActions(role).map((action, index) => (
+            <React.Fragment key={action.key}>
+              {index > 0 ? <View style={styles.divider} /> : null}
+              <ActivityRow
+                icon={action.icon}
+                label={t(action.labelKey)}
+                count=""
+                onPress={() => navigation.navigate(action.screen)}
+              />
+            </React.Fragment>
+          ))}
+        </View>
+
         <View style={styles.languageCard}>
           <Text style={styles.languageLabel}>{t('profile.language')}</Text>
           <View style={styles.languageOptions}>
@@ -153,6 +169,7 @@ export default function ProfileScreen() {
               { key: 'en' },
               { key: 'mr' },
               { key: 'hi' },
+              { key: 'lmn' },
             ].map((lang) => (
               <Pressable
                 key={lang.key}

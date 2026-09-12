@@ -4,7 +4,7 @@
     "slug": "kisanmitra",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -16,10 +16,8 @@
     "android": {
       "package": "com.kisanmitra.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/android-icon-foreground-logo.png"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO"
@@ -31,6 +29,15 @@
     "plugins": [
       "expo-font",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
         "expo-speech-recognition",
         {
           "microphonePermission": "KisanMitra needs microphone access to hear your voice command.",
@@ -39,13 +46,21 @@
             "com.google.android.googlequicksearchbox"
           ]
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
+    "owner": "john12321",
     "extra": {
       "eas": {
-        "projectId": "cdd01937-54c6-49bb-9e1d-fdfa2d29e9ad"
+        "projectId": "3fc4e50d-2755-4fac-8e17-3cd6916a2310"
       }
-    },
-    "owner": "kunni099"
+    }
   }
 }

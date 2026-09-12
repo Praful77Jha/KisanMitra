@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Pressable,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -134,9 +136,16 @@ export default function PostRequirementScreen() {
         />
         <View style={styles.suggestionsRow}>
           {suggestions.slice(0, 4).map((name) => (
-            <View key={name} style={styles.suggestion}>
+            <Pressable
+              key={name}
+              style={styles.suggestion}
+              onPress={() => {
+                setProduct(name);
+                Keyboard.dismiss();
+              }}
+            >
               <Text style={styles.suggestionText}>{name}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
 

@@ -24,6 +24,11 @@ const TYPE_ICON = {
   offer: 'pricetag-outline',
   order: 'receipt-outline',
   review: 'star-outline',
+  transport_quote: 'car-outline',
+  transport_quote_accepted: 'checkmark-circle-outline',
+  transport_status: 'car-outline',
+  transport_delivered: 'checkmark-done',
+  transport_review: 'star-outline',
 };
 
 function NotificationIcon({ type, unread }) {
@@ -87,6 +92,18 @@ export default function NotificationsScreen() {
     }
     if (item.refType === 'order' && item.refId) {
       navigation.navigate('OrderDetails', { orderId: item.refId });
+    }
+    if (
+      item.refType === 'transportRequest' &&
+      item.refId
+    ) {
+      navigation.navigate('TransportRequestDetails', { requestId: item.refId });
+    }
+    if (
+      item.refType === 'transportJob' &&
+      item.refId
+    ) {
+      navigation.navigate('TransportJob', { jobId: item.refId });
     }
   };
 

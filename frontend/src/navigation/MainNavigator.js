@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../theme';
 import { useTranslation } from '../i18n';
@@ -28,9 +28,20 @@ import MakeOfferScreen from '../screens/MakeOfferScreen';
 import AvailableNeedsScreen from '../screens/AvailableNeedsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import MyRatingsScreen from '../screens/MyRatingsScreen';
+import TransportRequestFormScreen from '../screens/TransportRequestFormScreen';
+import MyTransportRequestsScreen from '../screens/MyTransportRequestsScreen';
+import TransportRequestDetailsScreen from '../screens/TransportRequestDetailsScreen';
+import TransportQuoteComparisonScreen from '../screens/TransportQuoteComparisonScreen';
+import TransportJobScreen from '../screens/TransportJobScreen';
+import TransporterProfileScreen from '../screens/TransporterProfileScreen';
+import AvailableTransportRequestsScreen from '../screens/AvailableTransportRequestsScreen';
+import SendTransportQuoteScreen from '../screens/SendTransportQuoteScreen';
+import MyTransportJobsScreen from '../screens/MyTransportJobsScreen';
+import CompletedJobsScreen from '../screens/CompletedJobsScreen';
+import TransporterReviewsScreen from '../screens/TransporterReviewsScreen';
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const Stack = createStackNavigator();
 
 const getTabIcon = (routeName, focused) => {
   const icons = {
@@ -105,6 +116,17 @@ export default function MainNavigator() {
       <Stack.Screen name="AvailableNeeds" component={AvailableNeedsScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="MyRatings" component={MyRatingsScreen} />
+      <Stack.Screen name="TransportRequestForm" component={TransportRequestFormScreen} />
+      <Stack.Screen name="MyTransportRequests" component={MyTransportRequestsScreen} />
+      <Stack.Screen name="TransportRequestDetails" component={TransportRequestDetailsScreen} />
+      <Stack.Screen name="TransportQuoteComparison" component={TransportQuoteComparisonScreen} />
+      <Stack.Screen name="TransportJob" component={TransportJobScreen} />
+      <Stack.Screen name="TransporterProfile" component={TransporterProfileScreen} />
+      <Stack.Screen name="AvailableTransportRequests" component={AvailableTransportRequestsScreen} />
+      <Stack.Screen name="SendTransportQuote" component={SendTransportQuoteScreen} />
+      <Stack.Screen name="MyTransportJobs" component={MyTransportJobsScreen} />
+      <Stack.Screen name="CompletedJobs" component={CompletedJobsScreen} />
+      <Stack.Screen name="TransporterReviews" component={TransporterReviewsScreen} />
     </Stack.Navigator>
   );
 }

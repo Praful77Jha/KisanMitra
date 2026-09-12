@@ -7,7 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   Modal,
-  Platform,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useIsFocused, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -322,9 +322,6 @@ function CalculatorModal({ price, t, onClose }) {
     </Modal>
   );
 }
-
-// We need TextInput for the modal inputs
-const { TextInput } = require('react-native');
 
 // ---------------------------------------------------------------------------
 // Styles

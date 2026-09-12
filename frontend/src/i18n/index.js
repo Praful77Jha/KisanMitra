@@ -3,10 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import en from './en';
 import hi from './hi';
 import mr from './mr';
+import lmn from './lmn';
 
 const STORAGE_KEY = 'kisanmitra.language';
 
-const translations = { en, hi, mr };
+const translations = { en, hi, mr, lmn };
 
 // Migrate the legacy Punjabi language code to Hindi: the old 'pa' choice is
 // replaced by 'hi' so users who selected Punjabi before the change keep a

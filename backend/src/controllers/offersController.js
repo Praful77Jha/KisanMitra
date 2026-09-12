@@ -4,105 +4,13 @@ const productService = USE_DATABASE ? require('../services/productService') : nu
 const requirementService = USE_DATABASE ? require('../services/requirementService') : null;
 const userService = require('../services/userService');
 const { notifyUser } = require('./notificationsController');
+const { offers: demoOffers } = require('../demo/demoData');
 
-const offers = [
-  {
-    id: 'o1',
-    requirementId: 'r1',
-    productId: 'p1',
-    sellerName: 'AgroMart Traders',
-    sellerRating: 4.6,
-    verified: true,
-    quantity: 120,
-    unit: 'Quintal',
-    offeredPricePerQuintal: 4400,
-    distanceKm: 12,
-    transportCostPerQuintal: 50,
-    otherCostsPerQuintal: 20,
-    dealScore: 91,
-    shortlisted: true,
-  },
-  {
-    id: 'o2',
-    requirementId: 'r1',
-    productId: 'p1',
-    sellerName: 'GreenFields Co-op',
-    sellerRating: 4.8,
-    verified: true,
-    quantity: 120,
-    unit: 'Quintal',
-    offeredPricePerQuintal: 4500,
-    distanceKm: 45,
-    transportCostPerQuintal: 120,
-    otherCostsPerQuintal: 35,
-    dealScore: 84,
-    shortlisted: false,
-  },
-  {
-    id: 'o3',
-    requirementId: 'r1',
-    productId: 'p1',
-    sellerName: 'MP Grain Exports',
-    sellerRating: 4.5,
-    verified: true,
-    quantity: 120,
-    unit: 'Quintal',
-    offeredPricePerQuintal: 4650,
-    distanceKm: 380,
-    transportCostPerQuintal: 430,
-    otherCostsPerQuintal: 70,
-    dealScore: 62,
-    shortlisted: false,
-  },
-  {
-    id: 'o4',
-    requirementId: 'r2',
-    productId: 'p3',
-    sellerName: 'Lasalgaon APMC',
-    sellerRating: 4.3,
-    verified: false,
-    quantity: 80,
-    unit: 'Quintal',
-    offeredPricePerQuintal: 1750,
-    distanceKm: 8,
-    transportCostPerQuintal: 25,
-    otherCostsPerQuintal: 15,
-    dealScore: 92,
-    shortlisted: false,
-  },
-  {
-    id: 'o5',
-    requirementId: 'r2',
-    productId: 'p3',
-    sellerName: 'AgroMart Traders',
-    sellerRating: 4.6,
-    verified: true,
-    quantity: 80,
-    unit: 'Quintal',
-    offeredPricePerQuintal: 1820,
-    distanceKm: 15,
-    transportCostPerQuintal: 30,
-    otherCostsPerQuintal: 10,
-    dealScore: 86,
-    shortlisted: false,
-  },
-  {
-    id: 'o6',
-    requirementId: 'r2',
-    productId: 'p3',
-    sellerName: 'GreenFields Co-op',
-    sellerRating: 4.8,
-    verified: true,
-    quantity: 80,
-    unit: 'Quintal',
-    offeredPricePerQuintal: 1800,
-    distanceKm: 45,
-    transportCostPerQuintal: 90,
-    otherCostsPerQuintal: 25,
-    dealScore: 79,
-    shortlisted: false,
-  },
-];
+// In-memory offer store seeded from the shared demo catalog so database mode and
+// in-memory mode expose the same marketplace offers. Copied (spread) instead of
+// re-assigned so runtime mutations (unshift/push by createOffer) never leak back
+// into the shared demo module.
+const offers = [...demoOffers];
 
 async function getOffersByRequirement(req, res, next) {
   const requirementId = req.params.id || req.params.requirementId;

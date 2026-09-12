@@ -21,7 +21,7 @@ const {
 } = require('../src/controllers/paymentController');
 const { createRequirement } = require('../src/controllers/requirementsController');
 const { createOffer } = require('../src/controllers/offersController');
-const { createOrder, orders } = require('../src/controllers/ordersController');
+const { createOrder, cancelOrder, orders } = require('../src/controllers/ordersController');
 const paymentGateway = require('../src/services/paymentGateway');
 
 function makeRes() {
@@ -286,4 +286,44 @@ test('cancel a pending payment transitions to cancelled', () => {
   cancelPayment({ user: { id: buyerId }, params: { orderId } }, res, () => assert.fail('unexpected error'));
   assert.equal(statusOf(res), 200);
   assert.equal(storedOrder(orderId).paymentState, 'cancelled');
+});
+
+// ---- Order cancellation vs payment state (no refund facility) ----
+
+test('a paid order cannot be cancelled; status and payment are unchanged (400)', () => {
+  const { orderId, buyerId } = createOrderFor('pay-buyer-16', 'pay-seller-16');
+  const pay = makeRes();
+  confirmPayment({ user: { id: buyerId }, params: { orderId } }, pay, () => assert.fail('unexpected error'));
+  assert.equal(statusOf(pay), 200);
+  assert.equal(storedOrder(orderId).paymentState, 'paid');
+  const beforeStatus = storedOrder(orderId).status;
+
+  const cancel = makeRes();
+  cancelOrder({ user: { id: buyerId }, params: { id: orderId } }, cancel, () => assert.fail('unexpected error'));
+  assert.equal(statusOf(cancel), 400);
+  assert.match(bodyOf(cancel).message, /paid/i, 'error clearly names the paid state');
+  assert.equal(storedOrder(orderId).status, beforeStatus, 'order status unchanged');
+  assert.equal(storedOrder(orderId).paymentState, 'paid', 'payment state unchanged');
+});
+
+test('an unpaid cancellable order can still be cancelled', () => {
+  const { orderId, buyerId } = createOrderFor('pay-buyer-18', 'pay-seller-18');
+  const cancel = makeRes();
+  cancelOrder({ user: { id: buyerId }, params: { id: orderId } }, cancel, () => assert.fail('unexpected error'));
+  assert.equal(statusOf(cancel), 200);
+  assert.equal(storedOrder(orderId).status, 'Cancelled');
+});
+
+test('confirmPayment rejects a cancelled order even though payment is still pending (400)', () => {
+  const { orderId, buyerId } = createOrderFor('pay-buyer-17', 'pay-seller-17');
+  const cancel = makeRes();
+  cancelOrder({ user: { id: buyerId }, params: { id: orderId } }, cancel, () => assert.fail('unexpected error'));
+  assert.equal(statusOf(cancel), 200);
+  assert.equal(storedOrder(orderId).status, 'Cancelled');
+
+  const confirm = makeRes();
+  confirmPayment({ user: { id: buyerId }, params: { orderId } }, confirm, () => assert.fail('unexpected error'));
+  assert.equal(statusOf(confirm), 400);
+  assert.match(bodyOf(confirm).message, /cancelled/i, 'error clearly names the cancelled order');
+  assert.notEqual(storedOrder(orderId).paymentState, 'paid', 'a cancelled order never becomes paid');
 });

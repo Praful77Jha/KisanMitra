@@ -10,25 +10,15 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../theme';
-import { fetchOffersForProduct, fetchProducts } from '../services/productService';
+import { fetchOffersForProduct, fetchProducts, fetchRequirements } from '../services/productService';
 import { formatCurrency, formatDistance } from '../utils/formatting';
-import { totalDeliveredCost } from '../utils/calculation';
+import { selectBestOffer, totalDeliveredCost } from '../utils/calculation';
+import { resolveOfferSelectAction } from '../utils/offerActions';
 import Header from '../components/Header';
 import Badge from '../components/Badge';
 import PrimaryButton from '../components/PrimaryButton';
 import EmptyState from '../components/EmptyState';
 import { useTranslation } from '../i18n';
-
-function selectBestOffer(offers) {
-  if (offers.length === 0) return null;
-  return [...offers].sort((a, b) => {
-    const diff =
-      totalDeliveredCost(a.offeredPricePerQuintal, a.transportCostPerQuintal, a.otherCostsPerQuintal) -
-      totalDeliveredCost(b.offeredPricePerQuintal, b.transportCostPerQuintal, b.otherCostsPerQuintal);
-    if (diff !== 0) return diff;
-    return b.dealScore - a.dealScore;
-  })[0];
-}
 
 export default function CompareDealsScreen() {
   const { t } = useTranslation();
@@ -40,6 +30,7 @@ export default function CompareDealsScreen() {
   const [error, setError] = useState('');
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [selectNotice, setSelectNotice] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,11 +95,26 @@ export default function CompareDealsScreen() {
     [t]
   );
 
-  const handleSelect = (offer) => {
-    navigation.navigate('ConfirmOrder', {
-      requirementId: offer.requirementId,
-      offerId: offer.id,
-    });
+  const handleSelect = async (offer) => {
+    if (!offer || !offer.requirementId) {
+      setSelectNotice(true);
+      return;
+    }
+    try {
+      const requirements = await fetchRequirements();
+      const ownedRequirementIds = new Set(requirements.map((r) => r.id));
+      if (resolveOfferSelectAction(offer, ownedRequirementIds).type === 'notice') {
+        setSelectNotice(true);
+        return;
+      }
+      setSelectNotice(false);
+      navigation.navigate('ConfirmOrder', {
+        requirementId: offer.requirementId,
+        offerId: offer.id,
+      });
+    } catch (e) {
+      setSelectNotice(true);
+    }
   };
 
   if (loading) {
@@ -155,7 +161,10 @@ export default function CompareDealsScreen() {
             return (
               <Pressable
                 key={p.id}
-                onPress={() => setSelectedProductId(p.id)}
+                onPress={() => {
+                  setSelectedProductId(p.id);
+                  setSelectNotice(false);
+                }}
                 style={[styles.pickerChip, active && styles.pickerChipActive]}
               >
                 <Text style={[styles.pickerText, active && styles.pickerTextActive]}>
@@ -167,6 +176,26 @@ export default function CompareDealsScreen() {
         </ScrollView>
       </View>
 
+      {selectNotice ? (
+        <View style={styles.notice}>
+          <View style={styles.noticeRow}>
+            <Ionicons
+              name="information-circle-outline"
+              size={18}
+              color={theme.colors.textSecondary}
+            />
+            <Text style={styles.noticeText}>{t('compare.productOfferNotOrderable')}</Text>
+          </View>
+          <Pressable
+            style={styles.noticeLink}
+            onPress={() => navigation.navigate('Tabs', { screen: 'Post' })}
+            hitSlop={6}
+          >
+            <Text style={styles.noticeLinkText}>{t('postRequirement.title')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       {!product || offers.length === 0 ? (
         <EmptyState
           icon="git-compare-outline"
@@ -174,7 +203,12 @@ export default function CompareDealsScreen() {
           message={t('emptyStates.noOffersCompareHint')}
         />
       ) : (
-        <>
+        <ScrollView
+          style={styles.verticalScroll}
+          contentContainerStyle={styles.verticalContent}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+        >
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -268,7 +302,7 @@ export default function CompareDealsScreen() {
               </Text>
             </Pressable>
           </View>
-        </>
+        </ScrollView>
       )}
     </View>
   );
@@ -299,6 +333,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.divider,
     paddingBottom: theme.spacing.sm,
+  },
+  verticalScroll: {
+    flex: 1,
+  },
+  verticalContent: {
+    paddingBottom: theme.spacing.lg,
   },
   pickerRow: {
     paddingHorizontal: theme.spacing.lg,
@@ -408,6 +448,35 @@ const styles = StyleSheet.create({
   },
   selectButton: {
     alignSelf: 'stretch',
+  },
+  notice: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    padding: theme.spacing.md,
+    borderRadius: theme.spacing.radiusMedium,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  noticeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.sm,
+  },
+  noticeText: {
+    flex: 1,
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
+  },
+  noticeLink: {
+    marginTop: theme.spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  noticeLinkText: {
+    fontSize: theme.typography.fontSizes.sm,
+    fontWeight: theme.typography.fontWeights.semibold,
+    color: theme.colors.primary,
   },
   footer: {
     paddingHorizontal: theme.spacing.lg,

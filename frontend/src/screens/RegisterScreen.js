@@ -18,6 +18,12 @@ import InputField from '../components/InputField';
 import PrimaryButton from '../components/PrimaryButton';
 import { useTranslation } from '../i18n';
 
+const ROLE_OPTIONS = [
+  { key: 'FARMER', labelKey: 'roles.farmer' },
+  { key: 'BUYER', labelKey: 'roles.buyer' },
+  { key: 'TRANSPORTER', labelKey: 'roles.transporter' },
+];
+
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation();
@@ -26,6 +32,7 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('FARMER');
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -43,7 +50,7 @@ export default function RegisterScreen() {
     setSubmitError('');
     setSubmitting(true);
     try {
-      await register({ name: name.trim(), phone: phone.trim(), password });
+      await register({ name: name.trim(), phone: phone.trim(), password, role });
     } catch (error) {
       setSubmitError(error.message || t('errors.registrationFailed'));
     } finally {
@@ -82,6 +89,19 @@ export default function RegisterScreen() {
           ]}
           onChange={handleTabChange}
         />
+
+        <View style={styles.roleSection}>
+          <Text style={styles.roleTitle}>{t('auth.registerAs')}</Text>
+          <Text style={styles.roleHint}>{t('auth.registerAsHint')}</Text>
+          <SegmentedControl
+            value={role}
+            options={ROLE_OPTIONS.map((option) => ({
+              key: option.key,
+              label: t(option.labelKey),
+            }))}
+            onChange={setRole}
+          />
+        </View>
 
         <View style={styles.form}>
           <InputField
@@ -171,6 +191,20 @@ const styles = StyleSheet.create({
   },
   form: {
     marginTop: theme.spacing.xl,
+  },
+  roleSection: {
+    marginTop: theme.spacing.xl,
+  },
+  roleTitle: {
+    fontSize: theme.typography.fontSizes.md,
+    fontWeight: theme.typography.fontWeights.semibold,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xxs,
+  },
+  roleHint: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
   },
   registerButton: {
     marginTop: theme.spacing.xs,
