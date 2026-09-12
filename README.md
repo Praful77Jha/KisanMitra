@@ -1,4 +1,4 @@
-# KisanMitra
+# 🌾 KisanMitra
 
 **Farm-to-market decision support for Indian farmers — marketplace, deals, prices, transport, and a multilingual voice assistant in one mobile app.**
 
@@ -8,7 +8,7 @@ KisanMitra is a React Native (Expo) mobile app backed by a Node.js/Express + Pri
 
 ---
 
-## 1. Project Overview
+## 1. 📋 Project Overview
 
 | | |
 |---|---|
@@ -20,7 +20,7 @@ KisanMitra is a React Native (Expo) mobile app backed by a Node.js/Express + Pri
 
 ---
 
-## 2. User Roles
+## 2. 👥 User Roles
 
 The application supports **3 roles**:
 
@@ -34,65 +34,65 @@ The role is stored on the `User` model and is used for **role-based route protec
 
 ---
 
-## 3. Key Features
+## 3. ✨ Key Features
 
-### Authentication & Registration
+### 🔐 Authentication & Registration
 - Phone + password **registration and login** (`LoginScreen`, `RegisterScreen`).
 - JWT-based sessions with **automatic session restore** and **auto-logout on 401** (`AuthContext`, `apiClient`).
 - Role selection during registration (Farmer / Buyer / Transporter).
 
-### Farmer & Buyer Marketplace
+### 🌱 Farmer & Buyer Marketplace
 - Browse crop listings (`MarketplaceScreen`, `HomeScreen`, `ProductDetailsScreen`).
 - Public product catalog `GET /api/products`; authenticated create listing.
 - Seller identity always comes from the JWT, never the request body.
 
-### Product Search & Categories
+### 🔍 Product Search & Categories
 - Category filtering and keyword search on the marketplace (`MarketplaceScreen`).
 - Filtered results update instantly in the UI.
 
-### Sell / Post Crop
+### 📦 Sell / Post Crop
 - Post a crop for sale with name/category/grade/quantity/price/location and an optional photo (`SellCropScreen`).
 - **"You cannot make an offer on your own product"** guard (backend `offersController`).
 - **Crop image upload**: pick a photo from gallery → base64 upload → validated (magic bytes, ≤ 3 MB, JPG/PNG/WEBP) → stored on backend disk → `imageUrl` on the product (`uploadsController`).
 
-### Buyer Requirements
+### 📋 Buyer Requirements
 - Post a buying requirement (crop, quantity, max price, location) (`PostRequirementScreen`, `MyRequirementsScreen`).
 - Browse other users' active requirements (`AvailableNeedsScreen`) and delete your own with order-guards.
 
-### Offers
+### 💰 Offers
 - Sellers make offers on a **product** or against a **buyer's requirement** (`MakeOfferScreen`, `OffersScreen`).
 - Offers per product and per requirement; server enforces ownership and self-offer rules.
 
-### Compare Deals
+### 📊 Compare Deals
 - Side-by-side offer table per product/requirement (`CompareDealsScreen`).
 - **Ownership-aware Select**: a valid offer can only be ordered by the buyer who owns the linked requirement — otherwise an explanatory notice is shown instantly (`offerActions.resolveOfferSelectAction`).
 
-### Confirm Order & Orders
+### ✅ Confirm Order & Orders
 - Place orders server-side: totals, fees, timeline and payment state are derived on the backend, never from the client.
 - Order lifecycle statuses, cancellation, detail view (`OrdersScreen`, `OrderDetailsScreen`, `OrderSuccessScreen`).
 
-### Ratings & Reviews
+### ⭐ Ratings & Reviews
 - Rate the counterparty on a **Delivered** order; review is restricted to the two order parties, editable only by the author (`MyRatingsScreen`).
 
-### Price & Insights
+### 📈 Price & Insights
 - Aggregated **price insights** from recorded orders (avg/min/max/latest + trend, product filterable), public (`PriceInsightsScreen`).
 - **Market Comparison** against 10 curated MSAMB (Maharashtra State Agricultural Marketing Board) reference rows (`MarketComparisonScreen`).
 - **Smart Selling / recommendation**: ranks options by **total amount** (incl. transport & other costs) using farmer distance/vehicle logic (`SmartRecommendationScreen`).
 
-### Notifications
+### 🔔 Notifications
 - In-app notifications for offers/orders/reviews/chat/transport, scoped per user, with unread counts (`NotificationsScreen`).
 
-### Chat (REST-based, persisted)
+### 💬 Chat (REST-based, persisted)
 - Persistent per-order buyer-seller messaging; only the two parties can read/send (`ChatScreen`).
 - Messages are stored in the database and fetched on screen load (REST, not WebSocket).
 
-### Payments (mock)
+### 💳 Payments (mock)
 - Order payment state machine `pending → paid / failed / cancelled` with a clearly-labelled mock gateway (`PaymentScreen`, `PaymentResultScreen`).
 
-### Profile & Location
+### 👤 Profile & Location
 - Profile view, logout, language selection, role display, and a **State → District → Village** location picker persisted via `PATCH /api/users/me` (`ProfileScreen`, `LocationPickerModal`).
 
-### Transporter Ecosystem
+### 🚚 Transporter Ecosystem
 Full transport management system covering the complete lifecycle:
 
 **Farmer / Buyer flow:**
@@ -103,17 +103,17 @@ Register → Create Profile → View Available Requests → Send Quote → Recei
 
 See [Section 10: Transporter System](#10-transporter-system) for full details.
 
-### Multilingual UI
+### 🌍 Multilingual UI
 Four UI languages with persisted choice: **English, Hindi, Marathi, Lambadi**.
 See [Section 11: Multilingual Support](#11-multilingual-support) for details.
 
-### Voice Assistant
+### 🎤 Voice Assistant
 On-device speech recognition in English, Hindi and Marathi that parses commands into intents and auto-navigates.
 See [Section 12: Voice Assistant](#12-voice-assistant) for details.
 
 ---
 
-## 4. Technology Stack
+## 4. 🛠️ Technology Stack
 
 | Layer | Technology | Version(s) declared |
 |---|---|---|
@@ -138,7 +138,7 @@ See [Section 12: Voice Assistant](#12-voice-assistant) for details.
 
 ---
 
-## 5. System Architecture
+## 5. 🏗️ System Architecture
 
 ```
   Mobile App (React Native + Expo)
@@ -163,7 +163,7 @@ See [Section 12: Voice Assistant](#12-voice-assistant) for details.
 
 ---
 
-## 6. Authentication & Role-Based Authorization
+## 6. 🔐 Authentication & Role-Based Authorization
 
 Current implementation (`backend/src/utils/jwt.js`, `middlewares/auth.js`, `controllers/authController.js`; frontend `AuthContext.js`, `services/authService.js`, `apiClient.js`):
 
@@ -180,7 +180,7 @@ Current implementation (`backend/src/utils/jwt.js`, `middlewares/auth.js`, `cont
 
 ---
 
-## 7. Database Architecture (`backend/prisma/schema.prisma`)
+## 7. 🗄️ Database Architecture (`backend/prisma/schema.prisma`)
 
 **15 models.** The schema includes the original marketplace models plus the transport ecosystem.
 
@@ -245,7 +245,7 @@ MarketPrice — no foreign keys (reference data)
 
 ---
 
-## 8. API Architecture
+## 8. 🌐 API Architecture
 
 All routes mount under the `/api` prefix in `server.js`. Routes marked with a lock require `Authorization: Bearer <token>`.
 
@@ -378,7 +378,7 @@ All routes mount under the `/api` prefix in `server.js`. Routes marked with a lo
 
 ---
 
-## 9. Frontend Structure
+## 9. 📱 Frontend Structure
 
 ```
 frontend/
@@ -418,7 +418,7 @@ frontend/
 
 ---
 
-## 10. Transporter System
+## 10. 🚚 Transporter System
 
 ### Overview
 
@@ -519,7 +519,7 @@ Prisma ORM → MySQL
 
 ---
 
-## 11. Multilingual Support
+## 11. 🌍 Multilingual Support
 
 - **Four complete dictionaries:** `en.js`, `hi.js`, `mr.js`, `lmn.js` under `src/i18n/` — **846 keys each, parity-checked (0 missing/extra)**.
 - **Lambadi (`lmn`)** — uses Devanagari script. Verified: 846/846 keys, 838 translated values, 0 genuinely untranslated English strings, 0 interpolation mismatches, EN/HI/MR/LMN key parity passes. The remaining values identical to English are intentionally language-neutral (phone numbers, star symbols, numeric placeholders).
@@ -531,7 +531,7 @@ Prisma ORM → MySQL
 
 ---
 
-## 12. Voice Assistant
+## 12. 🎤 Voice Assistant
 
 - **Library:** `expo-speech-recognition` 3.1.3 (platform speech service — Android Google quicksearchbox is configured, plus iOS availability).
 - **Languages / locales:** English `en-IN`, Hindi `hi-IN`, Marathi `mr-IN` — mapped from the app language.
@@ -548,7 +548,7 @@ Prisma ORM → MySQL
 
 ---
 
-## 13. Image Upload
+## 13. 📸 Image Upload
 
 1. **Frontend picker:** `expo-image-picker` gallery pick in `SellCropScreen` → the base64 (or data-URL) payload is sent to `POST /api/upload` via `productService.uploadImage`.
 2. **Backend endpoint:** `controllers/uploadsController.js`:
@@ -563,7 +563,7 @@ Prisma ORM → MySQL
 
 ---
 
-## 14. Project Folder Structure
+## 14. 📂 Project Folder Structure
 
 ```
 KisanMitra/
@@ -617,7 +617,7 @@ KisanMitra/
 
 ---
 
-## 15. Environment Setup
+## 15. ⚙️ Environment Setup
 
 **Prerequisites:** Node.js >= 20, npm, a local MySQL server, an Android device/emulator, and optionally the EAS CLI (`npx eas-cli`).
 
@@ -675,7 +675,7 @@ npx prisma migrate deploy                   # target environment
 
 ---
 
-## 16. Testing
+## 16. 🧪 Testing
 
 > **Verified snapshot.** These numbers reflect the latest verified test run. Future code changes may alter these counts — re-run to confirm.
 
@@ -739,7 +739,7 @@ The DB-path tests use mocked persistence so no live MySQL is required.
 
 ---
 
-## 17. Current Database / Demo State
+## 17. 💾 Current Database / Demo State
 
 > The marketplace listings were intentionally cleaned at one point. New listings since then are test-created through the app, not seeds.
 
@@ -750,7 +750,7 @@ The repository does not ship or imply a fixed production or demo dataset. The My
 
 ---
 
-## 18. Build & Deployment
+## 18. 📦 Build & Deployment
 
 **EAS profiles (`frontend/eas.json`):**
 
@@ -783,7 +783,7 @@ npx eas-cli build --platform android --profile preview --non-interactive
 
 ---
 
-## 19. Implemented vs Future Scope
+## 19. ✅ Implemented vs Future Scope
 
 ### Implemented (working in the current codebase)
 - Phone registration/login + persisted JWT sessions with role selection (Farmer/Buyer/Transporter)
@@ -819,7 +819,7 @@ npx eas-cli build --platform android --profile preview --non-interactive
 
 ---
 
-## 20. Known Limitations
+## 20. ⚠️ Known Limitations
 
 1. **Curated market data** — Market Comparison uses 10 seeded MSAMB rows (`referenceDate` 2026-09-03), not a live price API.
 2. **Mock payments** — payment execute is a simulated gateway; real gateways (Razorpay/Stripe) are intended but not wired.
@@ -834,7 +834,7 @@ npx eas-cli build --platform android --profile preview --non-interactive
 
 ---
 
-## 21. SIH Demo Flow (all steps work today)
+## 21. 🎬 SIH Demo Flow (all steps work today)
 
 ```
  1. Register ..................  Create an account (phone + password, choose role)
@@ -861,7 +861,7 @@ npx eas-cli build --platform android --profile preview --non-interactive
 
 ---
 
-## 22. Judge-Friendly Technical Summary
+## 22. 🏆 Judge-Friendly Technical Summary
 
 - **Why React Native (Expo SDK 54)?** One cross-platform mobile codebase ships to Android fast (the target audience uses Android), and Expo gives instant LAN testing plus one-command EAS preview APKs — ideal for a hackathon demo cycle.
 - **Why Node.js + Express?** A small, unopinionated runtime where the entire API layer — routes, controllers, middlewares — is plain JavaScript shared with the team, and the in-memory test mode (`USE_DATABASE=false`) keeps development dependency-free.
@@ -872,7 +872,7 @@ npx eas-cli build --platform android --profile preview --non-interactive
 
 ---
 
-## 23. Security Notes
+## 23. 🔒 Security Notes
 
 **What is implemented (verified):**
 - JWT bearer authentication with `jsonwebtoken`; `verifyToken` middleware on all protected routes (`req.user` = `{ id, phone }`).
@@ -889,7 +889,7 @@ npx eas-cli build --platform android --profile preview --non-interactive
 
 ---
 
-## 24. Development Workflow
+## 24. 🔄 Development Workflow
 
 - **Git** — incremental changes, verified with tests and checks before stable commits; never commit secrets (`backend/uploads/`, `.env`, `.env.local` stay out of the tree — see Security Notes above).
 - **Testing gate** — run `npm test` in both `backend/` and `frontend/` before significant changes (latest verified snapshot: 320 backend + 108 frontend); tests use `node:test`, so no extra runner is needed.
@@ -902,7 +902,7 @@ npx eas-cli build --platform android --profile preview --non-interactive
 
 ---
 
-## 25. Current Status
+## 25. 📊 Current Status
 
 **Working today:** The complete farm-commerce loop — auth, marketplace & crop selling, requirements, offers, ownership-aware deal comparison, server-derived orders, logistics lifecycle, party-scoped chat & reviews, notifications, price insights + market comparison + smart recommendation (with quantity & distance unit selectors), image uploads, and the 3-language voice assistant — plus the full transporter ecosystem: profiles, transport requests, quote negotiation, job lifecycle with state-machine control, and transporter ratings/reviews. Four-language UI (EN/HI/MR/Lambadi), building as an EAS Android APK. Backend and frontend automated test suites are maintained and currently verified passing (latest verified snapshot: 320 backend + 108 frontend tests).
 
@@ -910,13 +910,13 @@ npx eas-cli build --platform android --profile preview --non-interactive
 
 ---
 
-## 26. License / Credits
+## 26. 📜 License / Credits
 
 Built for the **Smart India Hackathon (SIH)**. No specific open-source license has been declared yet.
 
 ---
 
-## 27. Transport Bug-Fix, Validation & Unit Selectors (session 2026-09-12)
+## 27. 🐛 Transport Bug-Fix, Validation & Unit Selectors (session 2026-09-12)
 
 Fixes applied after real-device APK testing found two server-side 500s and a missing selector on the Smart Recommendation screen.
 
