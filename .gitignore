@@ -32,6 +32,16 @@ frontend/.env.*
 # Test coverage
 coverage/
 
+# Backend logs
+backend/server.err.log
+backend/server.log
+
+# Frontend crash logs
+frontend/crash-log.txt
+
+# User uploads
+backend/uploads/
+
 # OS / editor
 .DS_Store
 Thumbs.db
