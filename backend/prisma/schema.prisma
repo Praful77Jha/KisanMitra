@@ -18,6 +18,8 @@ model chatmessage {
 
   @@index([orderId], map: "ChatMessage_orderId_idx")
   @@index([senderId], map: "ChatMessage_senderId_idx")
+
+  @@map("ChatMessage")
 }
 
 model logistics {
@@ -31,6 +33,8 @@ model logistics {
 
   @@index([orderId], map: "Logistics_orderId_idx")
   @@index([status], map: "Logistics_status_idx")
+
+  @@map("Logistics")
 }
 
 model marketprice {
@@ -46,6 +50,8 @@ model marketprice {
   @@unique([cropName, marketName, referenceDate], map: "MarketPrice_cropName_marketName_referenceDate_key")
   @@index([cropName], map: "MarketPrice_cropName_idx")
   @@index([marketName], map: "MarketPrice_marketName_idx")
+
+  @@map("MarketPrice")
 }
 
 model notification {
@@ -63,6 +69,8 @@ model notification {
   @@index([read], map: "Notification_read_idx")
   @@index([type], map: "Notification_type_idx")
   @@index([userId], map: "Notification_userId_idx")
+
+  @@map("Notification")
 }
 
 model offer {
@@ -88,6 +96,8 @@ model offer {
 
   @@index([productId], map: "Offer_productId_idx")
   @@index([requirementId], map: "Offer_requirementId_idx")
+
+  @@map("Offer")
 }
 
 model order {
@@ -127,6 +137,8 @@ model order {
   @@index([offerId], map: "Order_offerId_idx")
   @@index([requirementId], map: "Order_requirementId_idx")
   @@index([userId], map: "Order_userId_fkey")
+
+  @@map("Order")
 }
 
 model product {
@@ -154,6 +166,8 @@ model product {
 
   @@index([category], map: "Product_category_idx")
   @@index([sellerUserId], map: "Product_sellerUserId_fkey")
+
+  @@map("Product")
 }
 
 model requirement {
@@ -178,6 +192,8 @@ model requirement {
 
   @@index([status], map: "Requirement_status_idx")
   @@index([userId], map: "Requirement_userId_idx")
+
+  @@map("Requirement")
 }
 
 model review {
@@ -197,6 +213,8 @@ model review {
   @@index([orderId], map: "Review_orderId_idx")
   @@index([reviewedUserId], map: "Review_reviewedUserId_idx")
   @@index([reviewerId], map: "Review_reviewerId_fkey")
+
+  @@map("Review")
 }
 
 model transportchatmessage {
@@ -210,6 +228,8 @@ model transportchatmessage {
 
   @@index([senderId], map: "TransportChatMessage_senderId_idx")
   @@index([transportRequestId], map: "TransportChatMessage_transportRequestId_idx")
+
+  @@map("TransportChatMessage")
 }
 
 model transporterprofile {
@@ -225,6 +245,8 @@ model transporterprofile {
   user            user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "TransporterProfile_userId_fkey")
 
   @@index([userId], map: "TransporterProfile_userId_idx")
+
+  @@map("TransporterProfile")
 }
 
 model transportjob {
@@ -247,6 +269,8 @@ model transportjob {
   @@index([status], map: "TransportJob_status_idx")
   @@index([transportRequestId], map: "TransportJob_transportRequestId_idx")
   @@index([transporterId], map: "TransportJob_transporterId_idx")
+
+  @@map("TransportJob")
 }
 
 model transportoffer {
@@ -274,6 +298,8 @@ model transportoffer {
   @@index([status], map: "TransportOffer_status_idx")
   @@index([transportRequestId], map: "TransportOffer_transportRequestId_idx")
   @@index([transporterId], map: "TransportOffer_transporterId_idx")
+
+  @@map("TransportOffer")
 }
 
 model transportrequest {
@@ -306,6 +332,8 @@ model transportrequest {
   @@index([orderId], map: "TransportRequest_orderId_idx")
   @@index([status], map: "TransportRequest_status_idx")
   @@index([userId], map: "TransportRequest_userId_idx")
+
+  @@map("TransportRequest")
 }
 
 model transportreview {
@@ -325,6 +353,8 @@ model transportreview {
   @@index([jobId], map: "TransportReview_jobId_idx")
   @@index([reviewerId], map: "TransportReview_reviewerId_fkey")
   @@index([transporterId], map: "TransportReview_transporterId_idx")
+
+  @@map("TransportReview")
 }
 
 model user {
@@ -350,4 +380,6 @@ model user {
   transportrequest                                    transportrequest[]
   transportreview_transportreview_reviewerIdTouser    transportreview[]      @relation("transportreview_reviewerIdTouser")
   transportreview_transportreview_transporterIdTouser transportreview[]      @relation("transportreview_transporterIdTouser")
+
+  @@map("User")
 }
