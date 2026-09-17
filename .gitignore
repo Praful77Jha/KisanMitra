@@ -45,3 +45,7 @@ backend/uploads/
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# User uploads and crash logs
+backend/uploads/
+frontend/crash-log.txt
