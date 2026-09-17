@@ -13,7 +13,7 @@ async function findByCrop(cropName) {
   if (USE_DATABASE) {
     const prisma = require('../config/prisma');
     const where = cropName ? { cropName } : {};
-    const rows = await prisma.marketPrice.findMany({
+    const rows = await prisma.marketprice.findMany({
       where,
       orderBy: [{ cropName: 'asc' }, { pricePerQtl: 'desc' }],
     });
@@ -47,7 +47,7 @@ async function findByCrop(cropName) {
 async function listCrops() {
   if (USE_DATABASE) {
     const prisma = require('../config/prisma');
-    const rows = await prisma.marketPrice.findMany({
+    const rows = await prisma.marketprice.findMany({
       select: { cropName: true },
       distinct: ['cropName'],
       orderBy: { cropName: 'asc' },

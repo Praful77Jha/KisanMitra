@@ -97,12 +97,12 @@ function formatReview(review) {
 // ---- Transporter profiles ----
 
 async function findProfileByUserId(userId) {
-  const profile = await prisma.transporterProfile.findUnique({ where: { userId } });
+  const profile = await prisma.transporterprofile.findUnique({ where: { userId } });
   return formatProfile(profile);
 }
 
 async function createProfile({ userId, vehicleTypes, vehicleCapacity, baseLocation, description }) {
-  const created = await prisma.transporterProfile.create({
+  const created = await prisma.transporterprofile.create({
     data: {
       userId,
       vehicleTypes,
@@ -115,7 +115,7 @@ async function createProfile({ userId, vehicleTypes, vehicleCapacity, baseLocati
 }
 
 async function updateProfile(userId, data) {
-  const updated = await prisma.transporterProfile.update({
+  const updated = await prisma.transporterprofile.update({
     where: { userId },
     data,
   });
@@ -125,12 +125,12 @@ async function updateProfile(userId, data) {
 // ---- Transport requests ----
 
 async function findRequestById(id) {
-  const request = await prisma.transportRequest.findUnique({ where: { id } });
+  const request = await prisma.transportrequest.findUnique({ where: { id } });
   return formatRequest(request);
 }
 
 async function findRequestsForRequester(userId) {
-  const requests = await prisma.transportRequest.findMany({
+  const requests = await prisma.transportrequest.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
   });
@@ -138,7 +138,7 @@ async function findRequestsForRequester(userId) {
 }
 
 async function findRequestsForTransporter(userId) {
-  const requests = await prisma.transportRequest.findMany({
+  const requests = await prisma.transportrequest.findMany({
     where: {
       OR: [
         { offers: { some: { transporterId: userId } } },
@@ -157,7 +157,7 @@ async function findRequestsForTransporter(userId) {
 // offers. Transporters without a resolved profile see the full availability
 // list (they cannot quote until they create a profile anyway).
 async function findOpenRequests(transporterId, profile) {
-  const requests = await prisma.transportRequest.findMany({
+  const requests = await prisma.transportrequest.findMany({
     where: { status: REQUEST_STATUS.OPEN },
     orderBy: { createdAt: 'desc' },
   });
@@ -193,7 +193,7 @@ function deriveQuoteVehicle(profile, request) {
 }
 
 async function createRequest(data) {
-  const created = await prisma.transportRequest.create({
+  const created = await prisma.transportrequest.create({
     data: {
       userId: data.userId || null,
       cropName: data.cropName,
@@ -218,16 +218,16 @@ async function createRequest(data) {
 }
 
 async function deleteRequest(id) {
-  await prisma.transportRequest.delete({ where: { id } });
+  await prisma.transportrequest.delete({ where: { id } });
   return { id };
 }
 
 async function countJobsByRequest(requestId) {
-  return prisma.transportJob.count({ where: { transportRequestId: requestId } });
+  return prisma.transportjob.count({ where: { transportRequestId: requestId } });
 }
 
 async function countAcceptedOffersByRequest(requestId) {
-  return prisma.transportOffer.count({
+  return prisma.transportoffer.count({
     where: { transportRequestId: requestId, status: 'ACCEPTED' },
   });
 }
@@ -235,12 +235,12 @@ async function countAcceptedOffersByRequest(requestId) {
 // ---- Transport offers / quotes ----
 
 async function findOfferById(id) {
-  const offer = await prisma.transportOffer.findUnique({ where: { id } });
+  const offer = await prisma.transportoffer.findUnique({ where: { id } });
   return formatOffer(offer);
 }
 
 async function findQuotesByRequest(requestId) {
-  const offers = await prisma.transportOffer.findMany({
+  const offers = await prisma.transportoffer.findMany({
     where: { transportRequestId: requestId },
     orderBy: { createdAt: 'asc' },
   });
@@ -249,14 +249,14 @@ async function findQuotesByRequest(requestId) {
 
 // An active (still negotiable) quote from a transporter on a request.
 async function findActiveQuoteByTransporter(requestId, transporterId) {
-  const offer = await prisma.transportOffer.findFirst({
+  const offer = await prisma.transportoffer.findFirst({
     where: { transportRequestId: requestId, transporterId, status: 'SUBMITTED' },
   });
   return formatOffer(offer);
 }
 
 async function createQuote(data) {
-  const created = await prisma.transportOffer.create({
+  const created = await prisma.transportoffer.create({
     data: {
       transportRequestId: data.transportRequestId,
       transporterId: data.transporterId,
@@ -275,7 +275,7 @@ async function createQuote(data) {
 }
 
 async function rejectQuote(id) {
-  const updated = await prisma.transportOffer.update({
+  const updated = await prisma.transportoffer.update({
     where: { id },
     data: { status: 'REJECTED' },
   });
@@ -290,11 +290,11 @@ async function rejectQuote(id) {
 // derive who is currently allowed to act (round/actor parity).
 async function getNegotiationHistory(offerId) {
   const offers = [];
-  let current = await prisma.transportOffer.findUnique({ where: { id: offerId } });
+  let current = await prisma.transportoffer.findUnique({ where: { id: offerId } });
   while (current) {
     offers.unshift(current);
     if (!current.parentOfferId) break;
-    current = await prisma.transportOffer.findUnique({ where: { id: current.parentOfferId } });
+    current = await prisma.transportoffer.findUnique({ where: { id: current.parentOfferId } });
   }
   return offers.reverse().map(formatOffer);
 }
@@ -437,7 +437,7 @@ async function acceptQuote({ quoteId, requesterId }) {
 // ---- Transport jobs ----
 
 async function findJobById(id) {
-  const job = await prisma.transportJob.findUnique({
+  const job = await prisma.transportjob.findUnique({
     where: { id },
     include: { transportRequest: { select: { userId: true } } },
   });
@@ -447,7 +447,7 @@ async function findJobById(id) {
 const TERMINAL_JOB_STATUSES = ['DELIVERED', 'CANCELLED'];
 
 async function findJobsForTransporter(transporterId, onlyHistory = false) {
-  const jobs = await prisma.transportJob.findMany({
+  const jobs = await prisma.transportjob.findMany({
     where: {
       transporterId,
       ...(onlyHistory ? { status: { in: TERMINAL_JOB_STATUSES } } : {}),
@@ -459,7 +459,7 @@ async function findJobsForTransporter(transporterId, onlyHistory = false) {
 }
 
 async function findJobsForRequester(userId, onlyHistory = false) {
-  const jobs = await prisma.transportJob.findMany({
+  const jobs = await prisma.transportjob.findMany({
     where: {
       transportRequest: { userId },
       ...(onlyHistory ? { status: { in: TERMINAL_JOB_STATUSES } } : {}),
@@ -520,7 +520,7 @@ async function updateJobStatus({ jobId, status, actorId }) {
 // ---- Transport reviews ----
 
 async function findReviewForJob(jobId, reviewerId) {
-  const review = await prisma.transportReview.findUnique({
+  const review = await prisma.transportreview.findUnique({
     where: { jobId_reviewerId: { jobId, reviewerId } },
   });
   return formatReview(review);
@@ -550,7 +550,7 @@ async function createReviewAndRecalc({ jobId, reviewerId, transporterId, rating,
 }
 
 async function findReviewsForTransporter(transporterId) {
-  const reviews = await prisma.transportReview.findMany({
+  const reviews = await prisma.transportreview.findMany({
     where: { transporterId },
     orderBy: { createdAt: 'desc' },
   });

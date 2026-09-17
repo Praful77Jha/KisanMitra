@@ -14,7 +14,7 @@ function formatMessage(message) {
 // Messages for an order, oldest-first (conversation order). The sender's name is
 // attached (public profile info) so the other party can render who wrote it.
 async function findMessagesForOrder(orderId) {
-  const messages = await prisma.chatMessage.findMany({
+  const messages = await prisma.chatmessage.findMany({
     where: { orderId },
     orderBy: { createdAt: 'asc' },
     include: { sender: { select: { name: true } } },
@@ -26,7 +26,7 @@ async function findMessagesForOrder(orderId) {
 }
 
 async function createMessage(data) {
-  const message = await prisma.chatMessage.create({
+  const message = await prisma.chatmessage.create({
     data: {
       orderId: data.orderId,
       senderId: data.senderId,

@@ -29,6 +29,7 @@ const requirementSeed = [
     maxPricePerQuintal: 4500,
     location: 'Pune, Maharashtra',
     postedDate: new Date('2026-08-20'),
+    updatedAt: new Date('2026-08-20'),
     status: 'active',
   },
   {
@@ -40,6 +41,7 @@ const requirementSeed = [
     maxPricePerQuintal: 1600,
     location: 'Lasalgaon, Maharashtra',
     postedDate: new Date('2026-08-18'),
+    updatedAt: new Date('2026-08-18'),
     status: 'active',
   },
   {
@@ -51,6 +53,7 @@ const requirementSeed = [
     maxPricePerQuintal: 2200,
     location: 'Indore, Madhya Pradesh',
     postedDate: new Date('2026-08-10'),
+    updatedAt: new Date('2026-08-10'),
     status: 'completed',
   },
 ];
@@ -59,6 +62,7 @@ const orders = [
   {
     id: 'ORD-2026-0194',
     orderDate: new Date('2026-08-22'),
+    updatedAt: new Date('2026-08-22'),
     productName: 'Red Onion',
     quantity: 80,
     unit: 'Quintal',
@@ -83,6 +87,7 @@ const orders = [
   {
     id: 'ORD-2026-0172',
     orderDate: new Date('2026-08-15'),
+    updatedAt: new Date('2026-08-15'),
     productName: 'Wheat (Sharbati)',
     quantity: 150,
     unit: 'Quintal',
@@ -112,7 +117,7 @@ async function main() {
   await prisma.offer.deleteMany();
   await prisma.requirement.deleteMany();
   await prisma.product.deleteMany();
-  await prisma.marketPrice.deleteMany();
+  await prisma.marketprice.deleteMany();
 
   // 1. Products (no dependencies)
   for (const p of products) {
@@ -159,7 +164,7 @@ async function main() {
   // 5. MSAMB reference market prices (idempotent upsert, honors per-row dates)
   for (const mp of marketPrices) {
     const referenceDate = new Date(mp.referenceDate || MSAMB_DATE);
-    await prisma.marketPrice.upsert({
+    await prisma.marketprice.upsert({
       where: {
         cropName_marketName_referenceDate: {
           cropName: mp.cropName,
@@ -169,6 +174,7 @@ async function main() {
       },
       update: { pricePerQtl: mp.pricePerQtl },
       create: {
+        id: `mp-${mp.cropName}-${mp.marketName}`,
         cropName: mp.cropName,
         marketName: mp.marketName,
         pricePerQtl: mp.pricePerQtl,
@@ -177,7 +183,7 @@ async function main() {
       },
     });
   }
-  const marketPriceCount = await prisma.marketPrice.count();
+  const marketPriceCount = await prisma.marketprice.count();
 
   console.log('Seed complete.');
   console.log(`Products:      ${productCount}`);
