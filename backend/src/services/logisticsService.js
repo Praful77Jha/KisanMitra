@@ -31,6 +31,7 @@ async function findLogisticsByOrder(orderId) {
 async function initLogistics(orderId, updatedBy) {
   const record = await prisma.logistics.create({
     data: {
+      id: `l${Date.now()}`,
       orderId,
       status: 'pending',
       updatedBy: updatedBy || null,

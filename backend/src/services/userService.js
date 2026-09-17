@@ -14,7 +14,7 @@ async function findUserById(id) {
 async function createUser({ name, phone, password, role = 'FARMER' }) {
   const passwordHash = await hashPassword(password);
   return prisma.user.create({
-    data: { name, phone, passwordHash, role },
+    data: { id: `u${Date.now()}`, name, phone, passwordHash, role },
   });
 }
 

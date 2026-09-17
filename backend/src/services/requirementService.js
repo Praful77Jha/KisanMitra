@@ -65,6 +65,7 @@ async function createRequirement(data) {
     postedDate: new Date(new Date().toISOString().slice(0, 10)),
     status: 'active',
     offerCount: 0,
+    updatedAt: new Date(),
     ...(data.requiredBy ? { requiredBy: data.requiredBy } : {}),
     ...(data.notes ? { notes: data.notes } : {}),
   };

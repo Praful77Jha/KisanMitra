@@ -20,6 +20,7 @@ function formatNotification(notification) {
 async function createNotification(data) {
   const created = await prisma.notification.create({
     data: {
+      id: `n${Date.now()}`,
       userId: data.userId,
       type: data.type,
       title: data.title,

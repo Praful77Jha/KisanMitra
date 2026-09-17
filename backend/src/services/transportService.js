@@ -104,11 +104,13 @@ async function findProfileByUserId(userId) {
 async function createProfile({ userId, vehicleTypes, vehicleCapacity, baseLocation, description }) {
   const created = await prisma.transporterprofile.create({
     data: {
+      id: `tp${Date.now()}`,
       userId,
       vehicleTypes,
       vehicleCapacity: vehicleCapacity === undefined || vehicleCapacity === null ? null : vehicleCapacity,
       baseLocation,
       description: description || null,
+      updatedAt: new Date(),
     },
   });
   return formatProfile(created);
@@ -195,6 +197,7 @@ function deriveQuoteVehicle(profile, request) {
 async function createRequest(data) {
   const created = await prisma.transportrequest.create({
     data: {
+      id: `tr${Date.now()}`,
       userId: data.userId || null,
       cropName: data.cropName,
       quantity: data.quantity,
@@ -212,6 +215,7 @@ async function createRequest(data) {
       notes: data.notes || null,
       status: REQUEST_STATUS.OPEN,
       orderId: data.orderId || null,
+      updatedAt: new Date(),
     },
   });
   return formatRequest(created);
@@ -258,6 +262,7 @@ async function findActiveQuoteByTransporter(requestId, transporterId) {
 async function createQuote(data) {
   const created = await prisma.transportoffer.create({
     data: {
+      id: `to${Date.now()}`,
       transportRequestId: data.transportRequestId,
       transporterId: data.transporterId,
       transporterName: data.transporterName,
@@ -269,6 +274,7 @@ async function createQuote(data) {
       parentOfferId: data.parentOfferId || null,
       offerType: data.offerType || 'INITIAL',
       negotiationRound: data.negotiationRound === undefined ? 1 : data.negotiationRound,
+      updatedAt: new Date(),
     },
   });
   return formatOffer(created);
@@ -306,11 +312,11 @@ async function getNegotiationHistory(offerId) {
 // because a counter is only valid against the latest active offer.
 async function createCounterOffer(data) {
   return prisma.$transaction(async (tx) => {
-    const offer = await tx.transportOffer.findUnique({ where: { id: data.offerId } });
+    const offer = await tx.transportoffer.findUnique({ where: { id: data.offerId } });
     if (!offer) {
       return { ok: false, status: 404, message: 'Quote not found' };
     }
-    const request = await tx.transportRequest.findUnique({
+    const request = await tx.transportrequest.findUnique({
       where: { id: offer.transportRequestId },
     });
     if (!request || request.status !== REQUEST_STATUS.OPEN) {
@@ -321,7 +327,7 @@ async function createCounterOffer(data) {
     }
     // Reject counters past a finalization: a job (accept) or REJECTED thread
     // (reject) closes the negotiation.
-    const job = await tx.transportJob.findFirst({
+    const job = await tx.transportjob.findFirst({
       where: { transportRequestId: offer.transportRequestId },
     });
     if (job) {
@@ -342,12 +348,13 @@ async function createCounterOffer(data) {
 
     // Supersede the parent offer so only the newest chain link is actionable,
     // then create the matched counter offer chained via parentOfferId.
-    const superseded = await tx.transportOffer.update({
+    const superseded = await tx.transportoffer.update({
       where: { id: offer.id },
       data: { status: 'SUPERSEDED' },
     });
-    const created = await tx.transportOffer.create({
+    const created = await tx.transportoffer.create({
       data: {
+        id: `to${Date.now()}`,
         transportRequestId: offer.transportRequestId,
         transporterId: offer.transporterId,
         transporterName: offer.transporterName,
@@ -359,6 +366,7 @@ async function createCounterOffer(data) {
         parentOfferId: offer.id,
         offerType: 'COUNTER',
         negotiationRound: offer.negotiationRound + 1,
+        updatedAt: new Date(),
       },
     });
     return {
@@ -377,11 +385,11 @@ async function createCounterOffer(data) {
 // can map business failures to HTTP statuses without relying on exceptions.
 async function acceptQuote({ quoteId, requesterId }) {
   return prisma.$transaction(async (tx) => {
-    const quote = await tx.transportOffer.findUnique({ where: { id: quoteId } });
+    const quote = await tx.transportoffer.findUnique({ where: { id: quoteId } });
     if (!quote) {
       return { ok: false, status: 404, message: 'Quote not found' };
     }
-    const request = await tx.transportRequest.findUnique({
+    const request = await tx.transportrequest.findUnique({
       where: { id: quote.transportRequestId },
     });
     if (!request || request.userId !== requesterId) {
@@ -393,32 +401,34 @@ async function acceptQuote({ quoteId, requesterId }) {
     if (quote.status !== 'SUBMITTED') {
       return { ok: false, status: 400, message: 'Quote is not in a submittable state' };
     }
-    const jobCount = await tx.transportJob.count({
+    const jobCount = await tx.transportjob.count({
       where: { transportRequestId: quote.transportRequestId },
     });
     if (jobCount > 0) {
       return { ok: false, status: 400, message: 'A job already exists for this request' };
     }
 
-    const acceptedQuote = await tx.transportOffer.update({
+    const acceptedQuote = await tx.transportoffer.update({
       where: { id: quoteId },
       data: { status: 'ACCEPTED' },
     });
-    await tx.transportOffer.updateMany({
+    await tx.transportoffer.updateMany({
       where: { transportRequestId: quote.transportRequestId, status: 'SUBMITTED' },
       data: { status: 'REJECTED' },
     });
-    const job = await tx.transportJob.create({
+    const job = await tx.transportjob.create({
       data: {
+        id: `tj${Date.now()}`,
         transportRequestId: quote.transportRequestId,
         transportOfferId: quoteId,
         transporterId: quote.transporterId,
         orderId: request.orderId || null,
         status: 'BOOKED',
         updatedBy: requesterId,
+        updatedAt: new Date(),
       },
     });
-    const updatedRequest = await tx.transportRequest.update({
+    const updatedRequest = await tx.transportrequest.update({
       where: { id: quote.transportRequestId },
       data: { status: REQUEST_STATUS.IN_PROGRESS },
     });
@@ -475,7 +485,7 @@ async function findJobsForRequester(userId, onlyHistory = false) {
 // same transaction. No payment is created and no GPS tracking is claimed.
 async function updateJobStatus({ jobId, status, actorId }) {
   return prisma.$transaction(async (tx) => {
-    const job = await tx.transportJob.findUnique({
+    const job = await tx.transportjob.findUnique({
       where: { id: jobId },
       include: { transportRequest: { select: { userId: true } } },
     });
@@ -494,14 +504,14 @@ async function updateJobStatus({ jobId, status, actorId }) {
         message: `Cannot transition from ${job.status} to ${status}`,
       };
     }
-    const updated = await tx.transportJob.update({
+    const updated = await tx.transportjob.update({
       where: { id: jobId },
       data: { status, updatedBy: actorId },
       include: { transportRequest: { select: { userId: true } } },
     });
     let request = null;
     if (status === 'DELIVERED') {
-      request = await tx.transportRequest.update({
+      request = await tx.transportrequest.update({
         where: { id: job.transportRequestId },
         data: { status: REQUEST_STATUS.COMPLETED },
       });
@@ -530,17 +540,17 @@ async function findReviewForJob(jobId, reviewerId) {
 // all of their TransportReview records, persisting it on the profile. Atomic.
 async function createReviewAndRecalc({ jobId, reviewerId, transporterId, rating, comment }) {
   return prisma.$transaction(async (tx) => {
-    const review = await tx.transportReview.create({
-      data: { jobId, reviewerId, transporterId, rating, comment: comment || null },
+    const review = await tx.transportreview.create({
+      data: { id: `trev${Date.now()}`, jobId, reviewerId, transporterId, rating, comment: comment || null },
     });
-    const aggregate = await tx.transportReview.aggregate({
+    const aggregate = await tx.transportreview.aggregate({
       where: { transporterId },
       _avg: { rating: true },
       _count: { rating: true },
     });
     let profile = null;
     if (aggregate._count.rating > 0) {
-      profile = await tx.transporterProfile.update({
+      profile = await tx.transporterprofile.update({
         where: { userId: transporterId },
         data: { avgRating: aggregate._avg.rating },
       });

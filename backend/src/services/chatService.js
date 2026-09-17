@@ -28,6 +28,7 @@ async function findMessagesForOrder(orderId) {
 async function createMessage(data) {
   const message = await prisma.chatmessage.create({
     data: {
+      id: `cm${Date.now()}`,
       orderId: data.orderId,
       senderId: data.senderId,
       body: data.body,

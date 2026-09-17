@@ -132,6 +132,7 @@ async function createOrder(data) {
     sellerUserId: data.sellerUserId || null,
     status: ORDER_STAGES[0],
     timeline: buildOrderTimeline(orderDate, 0),
+    updatedAt: new Date(),
     requirementId: data.requirementId || null,
     offerId: data.offerId || null,
   };

@@ -56,6 +56,7 @@ async function findReviewsForOrder(orderId) {
 async function createReview(data) {
   const review = await prisma.review.create({
     data: {
+      id: `rv${Date.now()}`,
       orderId: data.orderId,
       reviewerId: data.reviewerId,
       reviewedUserId: data.reviewedUserId,
